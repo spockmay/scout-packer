@@ -1,0 +1,20 @@
+<button id="testBtn">Test Gear Engine</button>
+<p id="result"></p>
+
+<script>
+  const LAMBDA_URL = "https://vklrj2opmffhbmcyfkjofy27km0hscgy.lambda-url.us-east-2.on.aws/";
+
+  document.getElementById('testBtn').addEventListener('click', async () => {
+    const display = document.getElementById('result');
+    display.innerText = "Calling AWS...";
+
+    try {
+      const response = await fetch(LAMBDA_URL);
+      const data = await response.json();
+      display.innerText = data.message;
+    } catch (err) {
+      display.innerText = "Error: " + err.message;
+      console.error(err);
+    }
+  });
+</script>
