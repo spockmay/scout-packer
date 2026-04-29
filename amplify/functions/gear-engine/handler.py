@@ -52,18 +52,43 @@ def handler(event, context):
         temp_max = daily.get("temperature_2m_max", [70])[day_index]
 
         gear_list = [
-            "Standard Uniform",
-            "Water Bottle",
+            "Class A Uniform",
+            "Pocketknife",
             "Personal First Aid Kit",
+            "Extra Clothing",
+            "Filled Water Bottle",
+            "Flashlight or Headlamp",
+            "Fire Starter",
+            "Sun Protection",
+            "Map and compass",
+            "Insect repellant",
+            "Safety whistle",
+            "Toilet paper",
+            "Sleeping Bag",
+            "Sleeping pad",
+            "Pillow",
+            "Clothes",
+            "PJs",
+            "Toiletries",
+            "Books to read",
+            "Boots",
+            "Camp Shoes",
+            "Mess kit",
+            "Scout Book",
+            "Daypack",
+            "Trashbag",
+            "Towel",
+            "Stuffed Animal",
+            "Camp Chair",
         ]
 
         if precip_sum > 0:
             gear_list.append("Rain Jacket/Poncho")
-            gear_list.append("Pack Cover")
+            gear_list.append("Extra socks")
 
-        if temp_min < 50:  # Standard Scout 'Cold Weather' threshold
-            gear_list.append("Warm Layers (Fleece/Wool)")
-            gear_list.append("Sleeping Bag Liner")
+        if temp_min < 45:  # Standard Scout 'Cold Weather' threshold
+            gear_list.append("Base Layers")
+            gear_list.append("Hat & Gloves")
 
         return {
             "statusCode": 200,
