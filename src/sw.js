@@ -2,6 +2,7 @@ const CACHE_NAME = 'scout-packer-v1';
 const ASSETS = [
   './',
   './index.html',
+  './styles.css',
   './amplify_outputs.json',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'

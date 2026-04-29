@@ -3,25 +3,24 @@
 <head>
     <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Scout Packer</title>
-    </head>
-    <body>
-<div class="inputs">
-  <input type="date" id="startDate">
-  <button id="generateBtn">Generate Scout Packing List</button>  
-  <button id="clearBtn" class="btn-secondary">Clear All</button>  
-</div>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="inputs">
+        <input type="date" id="startDate">
+        <button id="generateBtn">Generate Scout Packing List</button>  
+        <button id="clearBtn" class="btn-secondary">Clear All</button>  
+    </div>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+    <div id="map" style="height: 300px; width: 100%; border-radius: 8px; margin-bottom: 10px;"></div>
 
-<div id="map" style="height: 300px; width: 100%; border-radius: 8px; margin-bottom: 10px;"></div>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
-
-<div><p id="gearContainer"></p></div>
-<div><p id="errorMessage"></p></div>
-
+    <div><p id="gearContainer"></p></div>
+    <div><p id="errorMessage"></p></div>
 </body>
 
 <script>
@@ -200,7 +199,7 @@
         const savedContext = JSON.parse(localStorage.getItem('scout_packer_context'));
             if (savedContext) {
                 if (savedContext.date) document.getElementById('startDate').value = savedContext.date;
-                if (savedContext.lat && savedContext.lng) {
+                if (savedContext.lat && savedContext.lon) {
                     const pos = [savedContext.lat, savedContext.lon];
                     marker.setLatLng(pos);
                     map.setView(pos, 13);
