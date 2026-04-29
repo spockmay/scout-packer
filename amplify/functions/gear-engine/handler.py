@@ -76,7 +76,8 @@ def handler(event, context):
                     "location": "%s, %s" % (lat, lon),
                     "forecast_precip": f"{precip_sum}mm",
                     "recommended_gear": gear_list,
-                }
+                },
+                ensure_ascii=False,
             ),
         }
 
