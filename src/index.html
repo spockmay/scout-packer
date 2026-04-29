@@ -46,7 +46,26 @@
     })
     .addTo(map);
 
-    const LAMBDA_URL = "https://vklrj2opmffhbmcyfkjofy27km0hscgy.lambda-url.us-east-2.on.aws/";
+    let LAMBDA_URL = "";
+
+    async function initializeApp() {
+    try {
+        // 1. Fetch the auto-generated config file
+        const response = await fetch('./amplify_outputs.json');
+        const outputs = await response.json();
+
+        // 2. Extract the URL for your 'gear-engine'
+        // The path in the JSON follows the name of your function
+        LAMBDA_URL = outputs.custom.gearEngineUrl; 
+
+        console.log("Systems Online. Backend connected to:", LAMBDA_URL);
+    } catch (err) {
+        console.error("Could not load amplify_outputs.json. Using local fallback?", err);
+    }
+    }
+
+    // Run this when the script loads
+    initializeApp();
 
     document.getElementById('testBtn').addEventListener('click', async () => {
     const coords = marker.getLatLng(); // {lat, lng}

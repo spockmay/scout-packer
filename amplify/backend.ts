@@ -22,7 +22,15 @@ const gearEngine = new lambda.Function(customStack, 'GearEngineFunction', {
   code: lambda.Code.fromAsset(path.join(__dirname, 'functions', 'gear-engine')),
 });
 
-// Expose the Function URL so your frontend can call it
-gearEngine.addFunctionUrl({
+// Expose the Function URL and store the reference
+const gearEngineUrl = gearEngine.addFunctionUrl({
   authType: lambda.FunctionUrlAuthType.NONE,
+});
+
+// 4. PUBLISH TO amplify_outputs.json
+// This creates a custom entry in the JSON that your frontend can read
+backend.addOutput({
+  custom: {
+    gearEngineUrl: gearEngineUrl.url,
+  },
 });
