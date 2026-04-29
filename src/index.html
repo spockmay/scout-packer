@@ -7,7 +7,8 @@
     <body>
 <div class="inputs">
   <input type="date" id="startDate">
-  <button id="testBtn">Generate Scout Packing List</button>  
+  <button id="generateBtn">Generate Scout Packing List</button>  
+  <button id="clearBtn" class="btn-secondary">Clear All</button>  
 </div>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -25,7 +26,8 @@
 
 <script>
     // 1. Initialize the map (centered on Solon, OH)
-    const map = L.map('map').setView([41.389, -81.441], 10);
+    const HOME_COORDS = [41.44, -81.33];
+    const map = L.map('map').setView(HOME_COORDS, 10);
     
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap'
@@ -69,7 +71,7 @@
     // Run this when the script loads
     initializeApp();
 
-    document.getElementById('testBtn').addEventListener('click', async () => {
+    document.getElementById('generateBtn').addEventListener('click', async () => {
     const coords = marker.getLatLng(); // {lat, lng}
     const display = document.getElementById('gearContainer');
     const errBox = document.getElementById('errorMessage');
@@ -107,6 +109,7 @@
 
     // Function to render the list with checkboxes
     function renderGearList(gearArray) {
+        updateUIState(gearArray.length > 0);        
         const container = document.getElementById('gearContainer');
         container.innerHTML = ''; // Clear previous
 
@@ -135,5 +138,38 @@
             container.appendChild(div);
         });
     }    
+
+    document.getElementById('clearBtn').addEventListener('click', () => {
+        // 1. Confirm the action to prevent accidental wipes
+        if (confirm("Are you sure you want to clear your current packing list?")) {
+            
+            // 2. Wipe the specific key from localStorage
+            localStorage.removeItem('scout_gear_list');
+            
+            // 3. Update the UI
+            const container = document.getElementById('gearContainer');
+            container.innerHTML = '<p class="empty-msg">No items currently on your list. Select a date and location to begin.</p>';
+            
+            // 2. Reset the Date Picker
+            const dateInput = document.getElementById('startDate');
+            dateInput.value = ''; // Wipes the selected date
+
+            // 3. Reset the Map Marker           
+            if (marker) {
+                marker.setLatLng(HOME_COORDS);
+                map.flyTo(HOME_COORDS, 10); 
+            }
+
+            // 4. Update UI State (Hide the clear button)
+            updateUIState(false);
+            
+            console.log("Full system reset complete.");
+            }
+    });
+
+    function updateUIState(hasItems) {
+        const clearBtn = document.getElementById('clearBtn');
+        clearBtn.style.display = hasItems ? 'inline-block' : 'none';
+    }
 </script>
 
