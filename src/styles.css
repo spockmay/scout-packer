@@ -43,6 +43,11 @@ h1 {
     padding-bottom: 10px;
 }
 
+#footer {
+    text-align: center;
+    font-size: small;
+}
+
 /* Card-style containers for Map and List */
 .card {
     background: white;
