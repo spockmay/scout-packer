@@ -1,20 +1,69 @@
-<button id="testBtn">Test Gear Engine</button>
+<div class="inputs">
+  <input type="date" id="startDate">
+  <button id="testBtn">Generate Scout Packing List</button>  
+</div>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+
+<div id="map" style="height: 300px; width: 100%; border-radius: 8px; margin-bottom: 10px;"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+
 <p id="result"></p>
 
 <script>
-  const LAMBDA_URL = "https://vklrj2opmffhbmcyfkjofy27km0hscgy.lambda-url.us-east-2.on.aws/";
+    // 1. Initialize the map (centered on Geauga County)
+    const map = L.map('map').setView([41.44, -81.33], 10);
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap'
+    }).addTo(map);
 
-  document.getElementById('testBtn').addEventListener('click', async () => {
+    // 2. Add a Draggable Marker
+    let marker = L.marker([41.44, -81.33], { draggable: true }).addTo(map);
+
+    // 3. Add the Search Box
+    const geocoder = L.Control.geocoder({
+        defaultMarkGeocode: false,
+        collapsed: false, // This keeps the text input visible at all times
+        placeholder: "Search for a campsite or town...",
+    })
+    .on('markgeocode', function(e) {
+        const bbox = e.geocode.bbox;
+        const center = e.geocode.center;
+        marker.setLatLng(center);
+        map.fitBounds(bbox);
+    })
+    .addTo(map);
+
+    const LAMBDA_URL = "https://vklrj2opmffhbmcyfkjofy27km0hscgy.lambda-url.us-east-2.on.aws/";
+
+    document.getElementById('testBtn').addEventListener('click', async () => {
+    const coords = marker.getLatLng(); // {lat, lng}
     const display = document.getElementById('result');
-    display.innerText = "Calling AWS...";
+    display.innerHTML = "Consulting the forecast...";
+    const date = document.getElementById('startDate').value;
+
+    // We send the data as Query Parameters
+    const url = `${LAMBDA_URL}?lat=${coords.lat}&lon=${coords.lng}&date=${date}`;
 
     try {
-      const response = await fetch(LAMBDA_URL);
-      const data = await response.json();
-      display.innerText = data.message;
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        // Create a simple list UI
+        let listHtml = `<h3>Gear for ${data.location}:</h3><ul>`;
+        data.recommended_gear.forEach(item => {
+        listHtml += `<li>✅ ${item}</li>`;
+        });
+        listHtml += `</ul><p>Forecasted Rain: ${data.forecast_precip}</p>`;
+        
+        display.innerHTML = listHtml;
     } catch (err) {
-      display.innerText = "Error: " + err.message;
-      console.error(err);
+        display.innerText = "Error: " + err.message;
     }
-  });
+    });
 </script>
+

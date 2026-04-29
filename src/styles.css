@@ -1,0 +1,7 @@
+/* Ensure the search box doesn't take up the whole screen on mobile */
+.leaflet-control-geocoder {
+    max-width: 300px !important;
+    background: white;
+    border: 2px solid rgba(0,0,0,0.2);
+    border-radius: 4px;
+}
