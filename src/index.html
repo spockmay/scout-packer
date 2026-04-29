@@ -18,7 +18,9 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 
-<p id="result"></p>
+<div><p id="gearContainer"></p></div>
+<div><p id="errorMessage"></p></div>
+
 </body>
 
 <script>
@@ -69,7 +71,9 @@
 
     document.getElementById('testBtn').addEventListener('click', async () => {
     const coords = marker.getLatLng(); // {lat, lng}
-    const display = document.getElementById('result');
+    const display = document.getElementById('gearContainer');
+    const errBox = document.getElementById('errorMessage');
+
     display.innerHTML = "Consulting the forecast...";
     const date = document.getElementById('startDate').value;
 
@@ -80,17 +84,56 @@
         const response = await fetch(url);
         const data = await response.json();
         
-        // Create a simple list UI
-        let listHtml = `<h3>Gear for ${data.location} on ${data.date}:</h3><ul>`;
-        data.recommended_gear.forEach(item => {
-        listHtml += `<li>✅ ${item}</li>`;
+        const newGear = data.recommended_gear.map(name => ({ name, checked: false }));
+
+        // Merge logic: If item exists in storage, keep its status
+        const saved = JSON.parse(localStorage.getItem('scout_gear_list') || '[]');
+        const mergedGear = newGear.map(newItem => {
+            const existing = saved.find(s => s.name === newItem.name);
+            return existing ? existing : newItem;
         });
-        listHtml += `</ul><p>Forecasted Rain: ${data.forecast_precip}</p>`;
-        
-        display.innerHTML = listHtml;
+
+        renderGearList(mergedGear);
+        saveGearState(mergedGear);
     } catch (err) {
-        display.innerText = "Error: " + err.message;
+        errBox.innerText = "Error: " + err.message;
     }
     });
+
+    // Function to save current state to storage
+    function saveGearState(gearItems) {
+        localStorage.setItem('scout_gear_list', JSON.stringify(gearItems));
+    }
+
+    // Function to render the list with checkboxes
+    function renderGearList(gearArray) {
+        const container = document.getElementById('gearContainer');
+        container.innerHTML = ''; // Clear previous
+
+        gearArray.forEach((item, index) => {
+            const div = document.createElement('div');
+            div.className = 'gear-item';
+            
+            // Create the checkbox
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = `item-${index}`;
+            checkbox.checked = item.checked || false;
+
+            // Listen for changes to save state
+            checkbox.addEventListener('change', () => {
+                item.checked = checkbox.checked;
+                saveGearState(gearArray);
+            });
+
+            const label = document.createElement('label');
+            label.htmlFor = `item-${index}`;
+            label.innerText = item.name;
+
+            div.appendChild(checkbox);
+            div.appendChild(label);
+            container.appendChild(div);
+        });
+    }    
 </script>
 

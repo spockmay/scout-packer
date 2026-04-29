@@ -5,3 +5,8 @@
     border: 2px solid rgba(0,0,0,0.2);
     border-radius: 4px;
 }
+.gear-item input:checked + label {
+    text-decoration: line-through;
+    color: #888;
+    transition: all 0.3s ease;
+}
