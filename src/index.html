@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scout Packer</title>
+    <title>ScoutPacker</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
     <link rel="stylesheet" href="styles.css">
@@ -10,14 +10,15 @@
 <body>
     <div class="inputs">
         <input type="date" id="startDate">
-        <button id="generateBtn">Generate Scout Packing List</button>  
-        <button id="clearBtn" class="btn-secondary">Clear All</button>  
+
     </div>
 
     <div id="map" style="height: 300px; width: 100%; border-radius: 8px; margin-bottom: 10px;"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+    <button id="generateBtn">Generate Scout Packing List</button>  
+    <button id="clearBtn" class="btn-secondary">Clear All</button>      
 
     <div><p id="gearContainer"></p></div>
     <div><p id="errorMessage"></p></div>
@@ -31,7 +32,7 @@
     }    
 
     // 1. Initialize the map (centered on Solon, OH)
-    const HOME_COORDS = [41.44, -81.33];
+    const HOME_COORDS = [41.388, -81.436];
     const map = L.map('map').setView(HOME_COORDS, 10);
     
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
