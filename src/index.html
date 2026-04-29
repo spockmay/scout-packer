@@ -25,6 +25,12 @@
 </body>
 
 <script>
+    // register a service worker to enable full offline mode
+    if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js')
+        .then(() => console.log("Service Worker Registered"));
+    }    
+
     // 1. Initialize the map (centered on Solon, OH)
     const HOME_COORDS = [41.44, -81.33];
     const map = L.map('map').setView(HOME_COORDS, 10);
@@ -34,7 +40,7 @@
     }).addTo(map);
 
     // 2. Add a Draggable Marker
-    let marker = L.marker([41.44, -81.33], { draggable: true }).addTo(map);
+    let marker = L.marker(HOME_COORDS, { draggable: true }).addTo(map);
 
     // 3. Add the Search Box
     const geocoder = L.Control.geocoder({
@@ -107,6 +113,16 @@
         localStorage.setItem('scout_gear_list', JSON.stringify(gearItems));
     }
 
+    // function to save the state of the app to local storage
+    function saveContext() {
+        const context = {
+                lat: marker.getLatLng().lat,
+                lon: marker.getLatLng().lng,
+                date: document.getElementById('startDate').value
+            };
+            localStorage.setItem('scout_packer_context', JSON.stringify(context));
+    }
+
     // Function to render the list with checkboxes
     function renderGearList(gearArray) {
         updateUIState(gearArray.length > 0);        
@@ -145,6 +161,7 @@
             
             // 2. Wipe the specific key from localStorage
             localStorage.removeItem('scout_gear_list');
+            localStorage.removeItem('scout_packer_context')
             
             // 3. Update the UI
             const container = document.getElementById('gearContainer');
@@ -171,5 +188,35 @@
         const clearBtn = document.getElementById('clearBtn');
         clearBtn.style.display = hasItems ? 'inline-block' : 'none';
     }
+
+    document.getElementById('startDate').addEventListener('change', saveContext);    
+    map.on('click', function(e) {
+        marker.setLatLng(e.latlng);
+        saveContext(); // Save the new coordinates immediately
+    });
+
+    // load the page state if there is saved data in local storage
+    window.addEventListener('load', () => {
+        const savedContext = JSON.parse(localStorage.getItem('scout_packer_context'));
+            if (savedContext) {
+                if (savedContext.date) document.getElementById('startDate').value = savedContext.date;
+                if (savedContext.lat && savedContext.lng) {
+                    const pos = [savedContext.lat, savedContext.lon];
+                    marker.setLatLng(pos);
+                    map.setView(pos, 13);
+                }
+            }
+
+        const savedGear = localStorage.getItem('scout_gear_list');
+        
+        if (savedGear) {
+            console.log("Found saved gear. Re-hydrating list...");
+            const gearArray = JSON.parse(savedGear);
+            renderGearList(gearArray);
+        } else {
+            console.log("No saved gear found. Starting fresh.");
+            updateUIState(false); // Hide the clear button
+        }
+    });
 </script>
 
