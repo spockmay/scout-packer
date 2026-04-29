@@ -1,5 +1,6 @@
 import json
 import urllib.request
+from datetime import datetime
 
 
 def handler(event, context):
@@ -15,8 +16,26 @@ def handler(event, context):
 
     lat = query_params.get("lat", "41.44")
     lon = query_params.get("lon", "-81.33")
+    selected_date_str = query_params.get("date")  # "YYYY-MM-DD"
 
     # print(f"USING COORDINATES: {lat}, {lon}")
+
+    # 1. Determine the 'Day Index'
+    day_index = 0
+    if selected_date_str:
+        try:
+            today = datetime.now().date()
+            selected_date = datetime.strptime(
+                selected_date_str, "%Y-%m-%d"
+            ).date()
+            # Calculate the difference in days
+            day_index = (selected_date - today).days
+
+            # Open-Meteo free tier usually gives 7-14 days.
+            # We should bound this to prevent IndexErrors.
+            day_index = max(0, min(day_index, 6))
+        except Exception:
+            day_index = 0
 
     # The weather API now uses the dynamic coordinates
     weather_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=auto"
@@ -26,9 +45,11 @@ def handler(event, context):
         with urllib.request.urlopen(weather_url) as response:
             weather_data = json.loads(response.read().decode())
 
-        # Simple Logic: If precipitation is predicted, add Rain Gear
-        precip_sum = weather_data["daily"]["precipitation_sum"][0]
-        temp_min = weather_data["daily"]["temperature_2m_min"][0]
+        # 2. Extract data for the SPECIFIC day selected
+        daily = weather_data.get("daily", {})
+        precip_sum = daily.get("precipitation_sum", [0])[day_index]
+        temp_min = daily.get("temperature_2m_min", [50])[day_index]
+        temp_max = daily.get("temperature_2m_max", [70])[day_index]
 
         gear_list = [
             "Standard Uniform",
