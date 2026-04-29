@@ -22,8 +22,8 @@
 </body>
 
 <script>
-    // 1. Initialize the map (centered on Geauga County)
-    const map = L.map('map').setView([41.44, -81.33], 10);
+    // 1. Initialize the map (centered on Solon, OH)
+    const map = L.map('map').setView([41.389, -81.441], 10);
     
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap'
@@ -62,7 +62,7 @@
         const data = await response.json();
         
         // Create a simple list UI
-        let listHtml = `<h3>Gear for ${data.location}:</h3><ul>`;
+        let listHtml = `<h3>Gear for ${data.location} on ${data.date}:</h3><ul>`;
         data.recommended_gear.forEach(item => {
         listHtml += `<li>✅ ${item}</li>`;
         });
