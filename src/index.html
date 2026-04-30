@@ -15,6 +15,8 @@
     <div class="input-group">
         <label for="startDate">Departure Date</label>
         <input type="date" id="startDate" name="startDate">
+        <label for="endDate">Return Date</label>
+        <input type="date" id="endDate" name="endDate">
     </div>
 
     <div id="map" style="height: 300px; width: 100%; border-radius: 8px; margin-bottom: 10px;"></div>
@@ -24,6 +26,8 @@
     <button id="generateBtn">Generate Scout Packing List</button>  
     <button id="clearBtn" class="btn-secondary">Clear All</button>      
 
+    <div><p id="weatherConditions"></p></div>
+    <div><p id="precipChance"></p></div>
     <div><p id="gearContainer"></p></div>
     <div><p id="errorMessage"></p></div>
     <div id="footer">
@@ -39,6 +43,21 @@
     navigator.serviceWorker.register('/sw.js')
         .then(() => console.log("Service Worker Registered"));
     }    
+
+    function getTodayString() {
+        // this is overly verbose but sadly needed to get the date in local TZ
+        const d = new Date();
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    function addDaysToDate(dateStr, days) {
+        const date = new Date(dateStr);
+        date.setDate(date.getDate() + days);
+        return date.toISOString().split('T')[0];
+    }
 
     // 1. Initialize the map (centered on Solon, OH)
     const HOME_COORDS = [41.388, -81.436];
@@ -87,34 +106,39 @@
     initializeApp();
 
     document.getElementById('generateBtn').addEventListener('click', async () => {
-    const coords = marker.getLatLng(); // {lat, lng}
-    const display = document.getElementById('gearContainer');
-    const errBox = document.getElementById('errorMessage');
+        const coords = marker.getLatLng(); // {lat, lng}
+        const display = document.getElementById('gearContainer');
+        const errBox = document.getElementById('errorMessage');
 
-    display.innerHTML = "Consulting the forecast...";
-    const date = document.getElementById('startDate').value;
+        display.innerHTML = "Consulting the forecast...";
+        const date = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        // We send the data as Query Parameters
+        const url = `${LAMBDA_URL}?lat=${coords.lat}&lon=${coords.lng}&date=${date}&enddate=${endDate}`;
 
-    // We send the data as Query Parameters
-    const url = `${LAMBDA_URL}?lat=${coords.lat}&lon=${coords.lng}&date=${date}`;
+        try {
+            const response = await fetch(url);
+            const data = await response.json();
+            
+            const newGear = data.recommended_gear.map(name => ({ name, checked: false }));
 
-    try {
-        const response = await fetch(url);
-        const data = await response.json();
-        
-        const newGear = data.recommended_gear.map(name => ({ name, checked: false }));
+            // Merge logic: If item exists in storage, keep its status
+            const saved = JSON.parse(localStorage.getItem('scout_gear_list') || '[]');
+            const mergedGear = newGear.map(newItem => {
+                const existing = saved.find(s => s.name === newItem.name);
+                return existing ? existing : newItem;
+            });
 
-        // Merge logic: If item exists in storage, keep its status
-        const saved = JSON.parse(localStorage.getItem('scout_gear_list') || '[]');
-        const mergedGear = newGear.map(newItem => {
-            const existing = saved.find(s => s.name === newItem.name);
-            return existing ? existing : newItem;
-        });
+            // const container = document.getElementById('weatherConditions');
+            // container.innerHTML = `<ul>${data.conditions.map(item => `<li>${item}</li>`).join('')}</ul>`;
 
-        renderGearList(mergedGear);
-        saveGearState(mergedGear);
-    } catch (err) {
-        errBox.innerText = "Error: " + err.message;
-    }
+            document.getElementById('precipChance').innerHTML = "Greatest chance of rain: " + data.precip_prob;
+
+            renderGearList(mergedGear);
+            saveGearState(mergedGear);
+        } catch (err) {
+            errBox.innerText = "Error: " + err.message;
+        }
     });
 
     // Function to save current state to storage
@@ -127,7 +151,8 @@
         const context = {
                 lat: marker.getLatLng().lat,
                 lon: marker.getLatLng().lng,
-                date: document.getElementById('startDate').value
+                date: document.getElementById('startDate').value,
+                enddate: document.getElementById('endDate').value
             };
             localStorage.setItem('scout_packer_context', JSON.stringify(context));
     }
@@ -176,9 +201,14 @@
             const container = document.getElementById('gearContainer');
             container.innerHTML = '<p class="empty-msg">No items currently on your list. Select a date and location to begin.</p>';
             
+            // document.getElementById('weatherConditions').innerHTML = ""
+            document.getElementById('precipChance').innerHTML = ""
+
             // 2. Reset the Date Picker
             const dateInput = document.getElementById('startDate');
             dateInput.value = ''; // Wipes the selected date
+            const enddateInput = document.getElementById('endDate');
+            enddateInput.value = ''; // Wipes the selected date
 
             // 3. Reset the Map Marker           
             if (marker) {
@@ -198,7 +228,22 @@
         clearBtn.style.display = hasItems ? 'inline-block' : 'none';
     }
 
-    document.getElementById('startDate').addEventListener('change', saveContext);    
+    document.getElementById('startDate').addEventListener('change', () => {
+        // Ensure endDate isn't before startDate
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate');
+        endDate.min = startDate;
+        
+        if ((endDate.value && endDate.value < startDate)
+          || endDate.value == "") {
+            endDate.value = startDate;
+        }
+    
+        saveContext(); // Update our persistent storage
+    });  
+
+    document.getElementById('endDate').addEventListener('change', saveContext);    
+
     map.on('click', function(e) {
         marker.setLatLng(e.latlng);
         saveContext(); // Save the new coordinates immediately
@@ -209,6 +254,7 @@
         const savedContext = JSON.parse(localStorage.getItem('scout_packer_context'));
             if (savedContext) {
                 if (savedContext.date) document.getElementById('startDate').value = savedContext.date;
+                if (savedContext.enddate) document.getElementById('endDate').value = savedContext.enddate;
                 if (savedContext.lat && savedContext.lon) {
                     const pos = [savedContext.lat, savedContext.lon];
                     marker.setLatLng(pos);
@@ -226,6 +272,13 @@
             console.log("No saved gear found. Starting fresh.");
             updateUIState(false); // Hide the clear button
         }
+
+        // input constraints on the date pickers
+        const today = getTodayString();
+        document.getElementById('startDate').min = today;
+        document.getElementById('startDate').max = addDaysToDate(today, 16);
+        document.getElementById('endDate').min = today;
+        document.getElementById('endDate').max = addDaysToDate(today, 16);
+
     });
 </script>
-

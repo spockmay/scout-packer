@@ -16,40 +16,29 @@ def handler(event, context):
 
     lat = query_params.get("lat", "41.44")
     lon = query_params.get("lon", "-81.33")
-    selected_date_str = query_params.get("date")  # "YYYY-MM-DD"
+    start_date_str = query_params.get("date")  # "YYYY-MM-DD"
+    end_date_str = query_params.get("enddate")  # "YYYY-MM-DD"
 
     # print(f"USING COORDINATES: {lat}, {lon}")
 
-    # 1. Determine the 'Day Index'
-    day_index = 0
-    if selected_date_str:
-        try:
-            today = datetime.now().date()
-            selected_date = datetime.strptime(
-                selected_date_str, "%Y-%m-%d"
-            ).date()
-            # Calculate the difference in days
-            day_index = (selected_date - today).days
-
-            # Open-Meteo free tier usually gives 7-14 days.
-            # We should bound this to prevent IndexErrors.
-            day_index = max(0, min(day_index, 6))
-        except Exception:
-            day_index = 0
-
     # The weather API now uses the dynamic coordinates
-    weather_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=auto"
+    query = "daily=apparent_temperature_max,apparent_temperature_min,uv_index_max,precipitation_probability_max,wind_speed_10m_max"
+    weather_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&{query}&timezone=auto&start_date={start_date_str}&end_date={end_date_str}"
 
     try:
         # Using standard urllib to keep the Lambda 'slim' (no extra dependencies)
         with urllib.request.urlopen(weather_url) as response:
             weather_data = json.loads(response.read().decode())
 
-        # 2. Extract data for the SPECIFIC day selected
+        # 2. Extract data for the days selected
         daily = weather_data.get("daily", {})
-        precip_sum = daily.get("precipitation_sum", [0])[day_index]
-        temp_min = daily.get("temperature_2m_min", [50])[day_index]
-        temp_max = daily.get("temperature_2m_max", [70])[day_index]
+        max_apparent_temp = max(daily.get("apparent_temperature_max", []))
+        min_apparent_temp = min(daily.get("apparent_temperature_min", []))
+        max_uv = max(daily.get("uv_index_max", []))
+        max_precip_prob = max(daily.get("precipitation_probability_max", []))
+        max_wind = max(daily.get("wind_speed_10m_max", []))
+
+        conditions = []
 
         gear_list = [
             "Class A Uniform",
@@ -82,13 +71,43 @@ def handler(event, context):
             "Camp Chair",
         ]
 
-        if precip_sum > 0:
+        if max_precip_prob > 40:  # max chance of precip > 40%
             gear_list.append("Rain Jacket/Poncho")
             gear_list.append("Extra socks")
+            conditions.append("rain")
 
-        if temp_min < 45:  # Standard Scout 'Cold Weather' threshold
+        if min_apparent_temp < 7:  # lowest low is below 7C/45F
             gear_list.append("Base Layers")
             gear_list.append("Hat & Gloves")
+            conditions.append("cold")
+
+        if min_apparent_temp < -10:
+            conditions.append("dangerous cold")
+
+        if max_apparent_temp > 32:  # highest high is > 32C/90F
+            gear_list.append("Extra water")
+            gear_list.append("Electrolyte packs")
+            conditions.append("hot")
+
+        if max_apparent_temp > 37:  # highest high is > 37C/100F
+            conditions.append("dangerous hot")
+
+        if max_uv > 3:
+            gear_list.append("SPF30+ Sunscreen")
+            gear_list.append("Sun hat")
+
+        if max_uv > 6:
+            conditions.append("high uv")
+
+        if max_wind > 41:
+            gear_list.append("Extra tent stakes")
+            conditions.append("wind warning")
+
+        if max_wind > 64:
+            conditions.append("wind hazard")
+
+        if max_wind > 93:
+            conditions.append("extreme wind hazard")
 
         return {
             "statusCode": 200,
@@ -98,10 +117,11 @@ def handler(event, context):
             },
             "body": json.dumps(
                 {
-                    "location": "%s, %s" % (lat, lon),
-                    "forecast_precip": f"{precip_sum}mm",
+                    "location": f"{lat}, {lon}",
+                    "precip_prob": f"{max_precip_prob}%",
                     "recommended_gear": gear_list,
-                    "date": selected_date_str,
+                    "conditions": conditions,
+                    "date": start_date_str,
                 },
                 ensure_ascii=False,
             ),

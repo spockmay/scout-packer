@@ -8,6 +8,7 @@ Currently running at https://scoutpacker.com
 ## Running the App Locally
 On Windows PowerShell change to the root directory of the app then start the connection to a private Amplify sandbox
 ```
+aws login
 npx ampx sandbox
 ```
 You can also run the front-end locally by
