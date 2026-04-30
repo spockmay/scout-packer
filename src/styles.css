@@ -22,6 +22,8 @@
     --warning-red: #B71C1C;    /* Safety Red */
     --stone-gray: #424242;
     --canvas-white: #F9FBE7;   /* Off-white to reduce glare outdoors */
+
+    --weather-icon-size: 70.5px;
 }
 
 body {
@@ -174,3 +176,36 @@ input[type="date"]:focus {
     border-color: var(--accent-gold);
     box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.2);
 }
+
+/* The base class for all weather icons */
+.icon-weather {
+    display: inline-block;
+    vertical-align: middle;
+    
+    /* Sets the 'viewing window' size */
+    width: var(--weather-icon-size);
+    height: var(--weather-icon-size);
+    
+    background-image: url('weather-sprites.png');
+    
+    /* Scales the entire sheet. Since we have 9 icons, 
+       the width must be 9x the window size. */
+    background-size: calc(var(--weather-icon-size) * 9) var(--weather-icon-size);
+    
+    background-repeat: no-repeat;
+    
+    /* Prevents blurriness when upscaling */
+    image-rendering: -webkit-optimize-contrast; 
+    image-rendering: smooth;
+}
+
+/* Position mapping using the variable */
+.icon-rain        { background-position: 0 0; }
+.icon-cold        { background-position: calc(var(--weather-icon-size) * -1) 0; }
+.icon-danger-cold { background-position: calc(var(--weather-icon-size) * -2) 0; }
+.icon-hot         { background-position: calc(var(--weather-icon-size) * -3) 0; }
+.icon-danger-hot  { background-position: calc(var(--weather-icon-size) * -4) 0; }
+.icon-uv          { background-position: calc(var(--weather-icon-size) * -5) 0; }
+.icon-wind-warn   { background-position: calc(var(--weather-icon-size) * -6) 0; }
+.icon-wind-haz    { background-position: calc(var(--weather-icon-size) * -7) 0; }
+.icon-wind-ex     { background-position: calc(var(--weather-icon-size) * -8) 0; }

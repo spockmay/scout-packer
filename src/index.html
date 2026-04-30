@@ -34,7 +34,7 @@
         <button id="generateBtn">Generate Scout Packing List</button>  
         <button id="clearBtn" class="btn-secondary">Clear All</button>      
 
-        <div><p id="weatherConditions"></p></div>
+        <div id="weather-alerts"></div>
         <div><p id="precipChance"></p></div>
         <div><p id="gearContainer"></p></div>
         <div><p id="errorMessage"></p></div>
@@ -150,10 +150,13 @@
                     return existing ? existing : newItem;
                 });
 
-                // const container = document.getElementById('weatherConditions');
-                // container.innerHTML = `<ul>${data.conditions.map(item => `<li>${item}</li>`).join('')}</ul>`;
-
                 document.getElementById('precipChance').innerHTML = "Greatest chance of rain: " + data.precip_prob;
+                
+                // display weather alert icons
+                const alertContainer = document.getElementById('weather-alerts');
+                alertContainer.innerHTML = data.conditions
+                    .map(cond => getWeatherIconHTML(cond))
+                    .join(' ');
 
                 renderGearList(mergedGear);
                 saveGearState(mergedGear);
@@ -181,6 +184,7 @@
         // Function to render the list with checkboxes
         function renderGearList(gearArray) {
             updateUIState(gearArray.length > 0);        
+
             const container = document.getElementById('gearContainer');
             container.innerHTML = ''; // Clear previous
 
@@ -222,8 +226,8 @@
                 const container = document.getElementById('gearContainer');
                 container.innerHTML = '<p class="empty-msg">No items currently on your list. Select a date and location to begin.</p>';
                 
-                // document.getElementById('weatherConditions').innerHTML = ""
                 document.getElementById('precipChance').innerHTML = ""
+                document.getElementById('weather-alerts').innerHTML = ""
 
                 // 2. Reset the Date Picker
                 const dateInput = document.getElementById('startDate');
@@ -302,5 +306,24 @@
             document.getElementById('endDate').max = addDaysToDate(today, 16);
 
         });
+
+        const weatherMap = {
+            'rain': 'icon-rain',
+            'cold': 'icon-cold',
+            'dangerous cold': 'icon-danger-cold',
+            'hot': 'icon-hot',
+            'dangerous hot': 'icon-danger-hot',
+            'high uv': 'icon-uv',
+            'wind warning': 'icon-wind-warn',
+            'wind hazard': 'icon-wind-haz',
+            'extreme wind hazard': 'icon-wind-ex'
+        };
+
+        // Function to generate the icon HTML
+        function getWeatherIconHTML(condition) {
+            const className = weatherMap[condition.toLowerCase()] || '';
+            if (!className) return ''; // Safety check if condition is unknown
+            return `<span class="icon-weather ${className}" title="${condition}"></span>`;
+        }        
     }); // End of Safety Catch
 </script>
