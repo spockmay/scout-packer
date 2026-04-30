@@ -16,29 +16,36 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="input-group">
-        <label for="startDate">Departure Date</label>
-        <input type="date" id="startDate" name="startDate">
-        <label for="endDate">Return Date</label>
-        <input type="date" id="endDate" name="endDate">
-    </div>
+    <header role="banner">
+        <!-- Nothing right now -->
+    </header>
+    <main role="main">
+        <div class="input-group">
+            <label for="startDate">Departure Date</label>
+            <input type="date" id="startDate" name="startDate">
+            <label for="endDate">Return Date</label>
+            <input type="date" id="endDate" name="endDate">
+        </div>
 
-    <div id="map" style="height: 300px; width: 100%; border-radius: 8px; margin-bottom: 10px;"></div>
+        <div id="map" style="height: 300px; width: 100%; border-radius: 8px; margin-bottom: 10px;"></div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
-    <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js" defer></script>
-    <button id="generateBtn">Generate Scout Packing List</button>  
-    <button id="clearBtn" class="btn-secondary">Clear All</button>      
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
+        <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js" defer></script>
+        <button id="generateBtn">Generate Scout Packing List</button>  
+        <button id="clearBtn" class="btn-secondary">Clear All</button>      
 
-    <div><p id="weatherConditions"></p></div>
-    <div><p id="precipChance"></p></div>
-    <div><p id="gearContainer"></p></div>
-    <div><p id="errorMessage"></p></div>
-    <div id="footer">
-        <hr>
-        <a href="https://buymeacoffee.com/spockmay" target="_blank">Buy Me a Coffee</a>
-        <br>©2026 | <a href="privacy.html" target="_blank">Your Data</a> | <a href="https://github.com/spockmay/scout-packer/issues" target="_blank">Bug or Idea?</a>
-    </div>
+        <div><p id="weatherConditions"></p></div>
+        <div><p id="precipChance"></p></div>
+        <div><p id="gearContainer"></p></div>
+        <div><p id="errorMessage"></p></div>
+    </main>
+    <footer role="contentinfo">
+        <div id="footer">
+            <hr>
+            <a href="https://buymeacoffee.com/spockmay" target="_blank">Buy Me a Coffee</a>
+            <br>©2026 | <a href="privacy.html" target="_blank">Your Data</a> | <a href="https://github.com/spockmay/scout-packer/issues" target="_blank">Bug or Idea?</a>
+        </div>
+    </footer>
 </body>
 
 <script>
