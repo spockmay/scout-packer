@@ -1,7 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="preconnect" href="https://unpkg.com">
+    <link rel="dns-prefetch" href="https://unpkg.com">
     <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="ScoutPacker: A smart, weather-driven gear checklist tool for Scouts. Pin your location and dates to get automated packing recommendations based on real-time forecasts.">    
+    <meta name="theme-color" content="#2E5A27">
     <title>ScoutPacker</title>
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
@@ -21,8 +25,8 @@
 
     <div id="map" style="height: 300px; width: 100%; border-radius: 8px; margin-bottom: 10px;"></div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
+    <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js" defer></script>
     <button id="generateBtn">Generate Scout Packing List</button>  
     <button id="clearBtn" class="btn-secondary">Clear All</button>      
 
@@ -38,247 +42,258 @@
 </body>
 
 <script>
-    // register a service worker to enable full offline mode
-    if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js')
-        .then(() => console.log("Service Worker Registered"));
-    }    
+    // This is the "Safety Catch" to make sure the map renders before we start being crazy
+    document.addEventListener('DOMContentLoaded', () => {
+        // register a service worker to enable full offline mode
+        if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js')
+            .then(() => console.log("Service Worker Registered"));
+        }    
 
-    function getTodayString() {
-        // this is overly verbose but sadly needed to get the date in local TZ
-        const d = new Date();
-        const year = d.getFullYear();
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-    }
+        function getTodayString() {
+            // this is overly verbose but sadly needed to get the date in local TZ
+            const d = new Date();
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
 
-    function addDaysToDate(dateStr, days) {
-        const date = new Date(dateStr);
-        date.setDate(date.getDate() + days);
-        return date.toISOString().split('T')[0];
-    }
+        function addDaysToDate(dateStr, days) {
+            const date = new Date(dateStr);
+            date.setDate(date.getDate() + days);
+            return date.toISOString().split('T')[0];
+        }
 
-    // 1. Initialize the map (centered on Solon, OH)
-    const HOME_COORDS = [41.388, -81.436];
-    const map = L.map('map').setView(HOME_COORDS, 10);
-    
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap'
-    }).addTo(map);
+        // 1. Initialize the map (centered on Solon, OH)
+        const HOME_COORDS = [41.388, -81.436];
+        const map = L.map('map', {
+            tap: false,          // Removes the 300ms legacy delay
+            touchZoom: 'center', // Improves feel on mobile
+            detectRetina: true,  // Sharpens tiles for PageSpeed
+            maxZoom: 13,
+            minZoom: 4
+        }).setView(HOME_COORDS, 10);
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap',
+            maxZoom: 13,
+            tileSize: 256 // Ensures Leaflet knows the base size before scaling        
+        }).addTo(map);
 
-    // 2. Add a Draggable Marker
-    let marker = L.marker(HOME_COORDS, { draggable: true }).addTo(map);
+        // 2. Add a Draggable Marker
+        let marker = L.marker(HOME_COORDS, { draggable: true }).addTo(map);
 
-    // 3. Add the Search Box
-    const geocoder = L.Control.geocoder({
-        defaultMarkGeocode: false,
-        collapsed: false, // This keeps the text input visible at all times
-        placeholder: "Search for a campsite or town...",
-    })
-    .on('markgeocode', function(e) {
-        const bbox = e.geocode.bbox;
-        const center = e.geocode.center;
-        marker.setLatLng(center);
-        map.fitBounds(bbox);
-    })
-    .addTo(map);
+        // 3. Add the Search Box
+        const geocoder = L.Control.geocoder({
+            defaultMarkGeocode: false,
+            collapsed: false, // This keeps the text input visible at all times
+            placeholder: "Search for a campsite or town...",
+        })
+        .on('markgeocode', function(e) {
+            const bbox = e.geocode.bbox;
+            const center = e.geocode.center;
+            marker.setLatLng(center);
+            map.fitBounds(bbox);
+        })
+        .addTo(map);
 
-    let LAMBDA_URL = "";
+        let LAMBDA_URL = "";
 
-    async function initializeApp() {
-    try {
-        // 1. Fetch the auto-generated config file
-        const response = await fetch('./amplify_outputs.json');
-        const outputs = await response.json();
-
-        // 2. Extract the URL for your 'gear-engine'
-        // The path in the JSON follows the name of your function
-        LAMBDA_URL = outputs.custom.gearEngineUrl; 
-
-        console.log("Systems Online. Backend connected to:", LAMBDA_URL);
-    } catch (err) {
-        console.error("Could not load amplify_outputs.json. Using local fallback?", err);
-    }
-    }
-
-    // Run this when the script loads
-    initializeApp();
-
-    document.getElementById('generateBtn').addEventListener('click', async () => {
-        const coords = marker.getLatLng(); // {lat, lng}
-        const display = document.getElementById('gearContainer');
-        const errBox = document.getElementById('errorMessage');
-
-        display.innerHTML = "Consulting the forecast...";
-        const date = document.getElementById('startDate').value;
-        const endDate = document.getElementById('endDate').value;
-        // We send the data as Query Parameters
-        const url = `${LAMBDA_URL}?lat=${coords.lat}&lon=${coords.lng}&date=${date}&enddate=${endDate}`;
-
+        async function initializeApp() {
         try {
-            const response = await fetch(url);
-            const data = await response.json();
-            
-            const newGear = data.recommended_gear.map(name => ({ name, checked: false }));
+            // 1. Fetch the auto-generated config file
+            const response = await fetch('./amplify_outputs.json');
+            const outputs = await response.json();
 
-            // Merge logic: If item exists in storage, keep its status
-            const saved = JSON.parse(localStorage.getItem('scout_gear_list') || '[]');
-            const mergedGear = newGear.map(newItem => {
-                const existing = saved.find(s => s.name === newItem.name);
-                return existing ? existing : newItem;
-            });
+            // 2. Extract the URL for your 'gear-engine'
+            // The path in the JSON follows the name of your function
+            LAMBDA_URL = outputs.custom.gearEngineUrl; 
 
-            // const container = document.getElementById('weatherConditions');
-            // container.innerHTML = `<ul>${data.conditions.map(item => `<li>${item}</li>`).join('')}</ul>`;
-
-            document.getElementById('precipChance').innerHTML = "Greatest chance of rain: " + data.precip_prob;
-
-            renderGearList(mergedGear);
-            saveGearState(mergedGear);
+            console.log("Systems Online. Backend connected to:", LAMBDA_URL);
         } catch (err) {
-            errBox.innerText = "Error: " + err.message;
+            console.error("Could not load amplify_outputs.json. Using local fallback?", err);
         }
-    });
+        }
 
-    // Function to save current state to storage
-    function saveGearState(gearItems) {
-        localStorage.setItem('scout_gear_list', JSON.stringify(gearItems));
-    }
+        // Run this when the script loads
+        initializeApp();
 
-    // function to save the state of the app to local storage
-    function saveContext() {
-        const context = {
-                lat: marker.getLatLng().lat,
-                lon: marker.getLatLng().lng,
-                date: document.getElementById('startDate').value,
-                enddate: document.getElementById('endDate').value
-            };
-            localStorage.setItem('scout_packer_context', JSON.stringify(context));
-    }
+        document.getElementById('generateBtn').addEventListener('click', async () => {
+            const coords = marker.getLatLng(); // {lat, lng}
+            const display = document.getElementById('gearContainer');
+            const errBox = document.getElementById('errorMessage');
 
-    // Function to render the list with checkboxes
-    function renderGearList(gearArray) {
-        updateUIState(gearArray.length > 0);        
-        const container = document.getElementById('gearContainer');
-        container.innerHTML = ''; // Clear previous
+            display.innerHTML = "Consulting the forecast...";
+            const date = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            // We send the data as Query Parameters
+            const url = `${LAMBDA_URL}?lat=${coords.lat}&lon=${coords.lng}&date=${date}&enddate=${endDate}`;
 
-        gearArray.forEach((item, index) => {
-            const div = document.createElement('div');
-            div.className = 'gear-item';
-            
-            // Create the checkbox
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.id = `item-${index}`;
-            checkbox.checked = item.checked || false;
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                const newGear = data.recommended_gear.map(name => ({ name, checked: false }));
 
-            // Listen for changes to save state
-            checkbox.addEventListener('change', () => {
-                item.checked = checkbox.checked;
-                saveGearState(gearArray);
-            });
+                // Merge logic: If item exists in storage, keep its status
+                const saved = JSON.parse(localStorage.getItem('scout_gear_list') || '[]');
+                const mergedGear = newGear.map(newItem => {
+                    const existing = saved.find(s => s.name === newItem.name);
+                    return existing ? existing : newItem;
+                });
 
-            const label = document.createElement('label');
-            label.htmlFor = `item-${index}`;
-            label.innerText = item.name;
+                // const container = document.getElementById('weatherConditions');
+                // container.innerHTML = `<ul>${data.conditions.map(item => `<li>${item}</li>`).join('')}</ul>`;
 
-            div.appendChild(checkbox);
-            div.appendChild(label);
-            container.appendChild(div);
+                document.getElementById('precipChance').innerHTML = "Greatest chance of rain: " + data.precip_prob;
+
+                renderGearList(mergedGear);
+                saveGearState(mergedGear);
+            } catch (err) {
+                errBox.innerText = "Error: " + err.message;
+            }
         });
-    }    
 
-    document.getElementById('clearBtn').addEventListener('click', () => {
-        // 1. Confirm the action to prevent accidental wipes
-        if (confirm("Are you sure you want to clear your current packing list?")) {
-            
-            // 2. Wipe the specific key from localStorage
-            localStorage.removeItem('scout_gear_list');
-            localStorage.removeItem('scout_packer_context')
-            
-            // 3. Update the UI
+        // Function to save current state to storage
+        function saveGearState(gearItems) {
+            localStorage.setItem('scout_gear_list', JSON.stringify(gearItems));
+        }
+
+        // function to save the state of the app to local storage
+        function saveContext() {
+            const context = {
+                    lat: marker.getLatLng().lat,
+                    lon: marker.getLatLng().lng,
+                    date: document.getElementById('startDate').value,
+                    enddate: document.getElementById('endDate').value
+                };
+                localStorage.setItem('scout_packer_context', JSON.stringify(context));
+        }
+
+        // Function to render the list with checkboxes
+        function renderGearList(gearArray) {
+            updateUIState(gearArray.length > 0);        
             const container = document.getElementById('gearContainer');
-            container.innerHTML = '<p class="empty-msg">No items currently on your list. Select a date and location to begin.</p>';
-            
-            // document.getElementById('weatherConditions').innerHTML = ""
-            document.getElementById('precipChance').innerHTML = ""
+            container.innerHTML = ''; // Clear previous
 
-            // 2. Reset the Date Picker
-            const dateInput = document.getElementById('startDate');
-            dateInput.value = ''; // Wipes the selected date
-            const enddateInput = document.getElementById('endDate');
-            enddateInput.value = ''; // Wipes the selected date
+            gearArray.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'gear-item';
+                
+                // Create the checkbox
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = `item-${index}`;
+                checkbox.checked = item.checked || false;
 
-            // 3. Reset the Map Marker           
-            if (marker) {
-                marker.setLatLng(HOME_COORDS);
-                map.flyTo(HOME_COORDS, 10); 
-            }
+                // Listen for changes to save state
+                checkbox.addEventListener('change', () => {
+                    item.checked = checkbox.checked;
+                    saveGearState(gearArray);
+                });
 
-            // 4. Update UI State (Hide the clear button)
-            updateUIState(false);
-            
-            console.log("Full system reset complete.");
-            }
-    });
+                const label = document.createElement('label');
+                label.htmlFor = `item-${index}`;
+                label.innerText = item.name;
 
-    function updateUIState(hasItems) {
-        const clearBtn = document.getElementById('clearBtn');
-        clearBtn.style.display = hasItems ? 'inline-block' : 'none';
-    }
+                div.appendChild(checkbox);
+                div.appendChild(label);
+                container.appendChild(div);
+            });
+        }    
 
-    document.getElementById('startDate').addEventListener('change', () => {
-        // Ensure endDate isn't before startDate
-        const startDate = document.getElementById('startDate').value;
-        const endDate = document.getElementById('endDate');
-        endDate.min = startDate;
-        
-        if ((endDate.value && endDate.value < startDate)
-          || endDate.value == "") {
-            endDate.value = startDate;
-        }
-    
-        saveContext(); // Update our persistent storage
-    });  
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            // 1. Confirm the action to prevent accidental wipes
+            if (confirm("Are you sure you want to clear your current packing list?")) {
+                
+                // 2. Wipe the specific key from localStorage
+                localStorage.removeItem('scout_gear_list');
+                localStorage.removeItem('scout_packer_context')
+                
+                // 3. Update the UI
+                const container = document.getElementById('gearContainer');
+                container.innerHTML = '<p class="empty-msg">No items currently on your list. Select a date and location to begin.</p>';
+                
+                // document.getElementById('weatherConditions').innerHTML = ""
+                document.getElementById('precipChance').innerHTML = ""
 
-    document.getElementById('endDate').addEventListener('change', saveContext);    
+                // 2. Reset the Date Picker
+                const dateInput = document.getElementById('startDate');
+                dateInput.value = ''; // Wipes the selected date
+                const enddateInput = document.getElementById('endDate');
+                enddateInput.value = ''; // Wipes the selected date
 
-    map.on('click', function(e) {
-        marker.setLatLng(e.latlng);
-        saveContext(); // Save the new coordinates immediately
-    });
-
-    // load the page state if there is saved data in local storage
-    window.addEventListener('load', () => {
-        const savedContext = JSON.parse(localStorage.getItem('scout_packer_context'));
-            if (savedContext) {
-                if (savedContext.date) document.getElementById('startDate').value = savedContext.date;
-                if (savedContext.enddate) document.getElementById('endDate').value = savedContext.enddate;
-                if (savedContext.lat && savedContext.lon) {
-                    const pos = [savedContext.lat, savedContext.lon];
-                    marker.setLatLng(pos);
-                    map.setView(pos, 13);
+                // 3. Reset the Map Marker           
+                if (marker) {
+                    marker.setLatLng(HOME_COORDS);
+                    map.flyTo(HOME_COORDS, 10); 
                 }
-            }
 
-        const savedGear = localStorage.getItem('scout_gear_list');
-        
-        if (savedGear) {
-            console.log("Found saved gear. Re-hydrating list...");
-            const gearArray = JSON.parse(savedGear);
-            renderGearList(gearArray);
-        } else {
-            console.log("No saved gear found. Starting fresh.");
-            updateUIState(false); // Hide the clear button
+                // 4. Update UI State (Hide the clear button)
+                updateUIState(false);
+                
+                console.log("Full system reset complete.");
+                }
+        });
+
+        function updateUIState(hasItems) {
+            const clearBtn = document.getElementById('clearBtn');
+            clearBtn.style.display = hasItems ? 'inline-block' : 'none';
         }
 
-        // input constraints on the date pickers
-        const today = getTodayString();
-        document.getElementById('startDate').min = today;
-        document.getElementById('startDate').max = addDaysToDate(today, 16);
-        document.getElementById('endDate').min = today;
-        document.getElementById('endDate').max = addDaysToDate(today, 16);
+        document.getElementById('startDate').addEventListener('change', () => {
+            // Ensure endDate isn't before startDate
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate');
+            endDate.min = startDate;
+            
+            if ((endDate.value && endDate.value < startDate)
+            || endDate.value == "") {
+                endDate.value = startDate;
+            }
+        
+            saveContext(); // Update our persistent storage
+        });  
 
-    });
+        document.getElementById('endDate').addEventListener('change', saveContext);    
+
+        map.on('click', function(e) {
+            marker.setLatLng(e.latlng);
+            saveContext(); // Save the new coordinates immediately
+        });
+
+        // load the page state if there is saved data in local storage
+        window.addEventListener('load', () => {
+            const savedContext = JSON.parse(localStorage.getItem('scout_packer_context'));
+                if (savedContext) {
+                    if (savedContext.date) document.getElementById('startDate').value = savedContext.date;
+                    if (savedContext.enddate) document.getElementById('endDate').value = savedContext.enddate;
+                    if (savedContext.lat && savedContext.lon) {
+                        const pos = [savedContext.lat, savedContext.lon];
+                        marker.setLatLng(pos);
+                        map.setView(pos, 13);
+                    }
+                }
+
+            const savedGear = localStorage.getItem('scout_gear_list');
+            
+            if (savedGear) {
+                console.log("Found saved gear. Re-hydrating list...");
+                const gearArray = JSON.parse(savedGear);
+                renderGearList(gearArray);
+            } else {
+                console.log("No saved gear found. Starting fresh.");
+                updateUIState(false); // Hide the clear button
+            }
+
+            // input constraints on the date pickers
+            const today = getTodayString();
+            document.getElementById('startDate').min = today;
+            document.getElementById('startDate').max = addDaysToDate(today, 16);
+            document.getElementById('endDate').min = today;
+            document.getElementById('endDate').max = addDaysToDate(today, 16);
+
+        });
+    }); // End of Safety Catch
 </script>
