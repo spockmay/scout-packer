@@ -116,6 +116,7 @@ button:active {
 }
 
 #generateBtn {
+    display: none; /* hidden on start */
     background-color: var(--primary-green);
     color: white;
     box-shadow: 0 4px 0 #1B3517;

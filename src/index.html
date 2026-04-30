@@ -74,10 +74,15 @@
 
         // 3. Render the String
         if (dayCount > 0) {
-            const dayLabel = dayCount === 1 ? "day" : "day";
-            titleElement.innerText = `${dayCount} ${dayLabel} trip to ${location}`;
+            titleElement.innerText = `${dayCount} day trip to ${location}`;
+            
+            // Show the button now that the trip is valid
+            generateBtn.style.display = "block";            
         } else {
-            titleElement.innerText = `Plan your trip to ${location}`;
+            titleElement.innerText = ""; 
+        
+            // Hide the button if dates are cleared or invalid
+            generateBtn.style.display = "none";            
         }
 
         // 4. Subtle pulse animation
@@ -283,6 +288,7 @@
 
                 // 4. Update UI State (Hide the clear button)
                 updateUIState(false);
+                generateBtn.style.display = "none";            
                 
                 console.log("Full system reset complete.");
                 }
