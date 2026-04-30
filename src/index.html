@@ -31,6 +31,9 @@
 
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
         <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js" defer></script>
+
+        <div id="tripTitleDisplay"></div>
+
         <button id="generateBtn">Generate Scout Packing List</button>  
         <button id="clearBtn" class="btn-secondary">Clear All</button>      
 
@@ -49,6 +52,40 @@
 </body>
 
 <script>
+    let currentTripLocation = ""; // Global variable to store the name from the map
+
+    function updateTripName() {
+        const startStr = document.getElementById('startDate').value;
+        const endStr = document.getElementById('endDate').value;
+        const titleElement = document.getElementById('tripTitleDisplay');
+
+        // 1. Calculate Days
+        let dayCount = 0;
+        if (startStr && endStr) {
+            const start = new Date(startStr);
+            const end = new Date(endStr);
+            // Calculate difference in milliseconds, convert to days, and add 1 for inclusivity
+            const diffTime = Math.abs(end - start);
+            dayCount = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+        }
+
+        // 2. Determine Location Fallback
+        const location = currentTripLocation || "Somewhere Exciting";
+
+        // 3. Render the String
+        if (dayCount > 0) {
+            const dayLabel = dayCount === 1 ? "day" : "day";
+            titleElement.innerText = `${dayCount} ${dayLabel} trip to ${location}`;
+        } else {
+            titleElement.innerText = `Plan your trip to ${location}`;
+        }
+
+        // 4. Subtle pulse animation
+        titleElement.classList.remove('title-update-pulse');
+        void titleElement.offsetWidth; // Trigger reflow to restart animation
+        titleElement.classList.add('title-update-pulse');
+    }
+
     // This is the "Safety Catch" to make sure the map renders before we start being crazy
     document.addEventListener('DOMContentLoaded', () => {
         // register a service worker to enable full offline mode
@@ -102,6 +139,8 @@
             const center = e.geocode.center;
             marker.setLatLng(center);
             map.fitBounds(bbox);
+            currentTripLocation = e.target._lastGeocode;
+            updateTripName()
         })
         .addTo(map);
 
@@ -224,12 +263,11 @@
                 localStorage.removeItem('scout_packer_context')
                 
                 // 3. Update the UI
-                const container = document.getElementById('gearContainer');
-                container.innerHTML = '<p class="empty-msg">No items currently on your list. Select a date and location to begin.</p>';
-                
+                document.getElementById('gearContainer').innerHTML = "";
                 document.getElementById('precipChance').innerHTML = ""
                 document.getElementById('weather-alerts').innerHTML = ""
                 document.getElementById('errorMessage').innerText = ""
+                document.getElementById('tripTitleDisplay').innerText = ""
 
                 // 2. Reset the Date Picker
                 const dateInput = document.getElementById('startDate');
@@ -269,11 +307,39 @@
             saveContext(); // Update our persistent storage
         });  
 
-        document.getElementById('endDate').addEventListener('change', saveContext);    
+        document.getElementById('endDate').addEventListener('change', saveContext);
+        document.getElementById('startDate').addEventListener('change', updateTripName);
+        document.getElementById('endDate').addEventListener('change', updateTripName);
 
-        map.on('click', function(e) {
+        map.on('click', async function(e) {
             marker.setLatLng(e.latlng);
             saveContext(); // Save the new coordinates immediately
+
+            const { lat, lng } = e.latlng;
+
+                try {
+                    // Adding a User-Agent is good practice for Nominatim
+                    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`, {
+                        headers: { 'User-Agent': 'ScoutPacker-App-v1.0' }
+                    });
+                    const data = await response.json();
+                    
+                    // Priority logic: Park/Nature > Neighborhood/Suburb > City/Township
+                    currentTripLocation = data.address.leisure || 
+                                        data.address.park ||
+                                        data.address.neighbourhood ||
+                                        data.address.city || 
+                                        data.address.town || 
+                                        data.address.village || 
+                                        ""; // Empty string triggers 'Somewhere Exciting' in updateTripName
+
+                } catch (error) {
+                    console.error("Geocoding failed:", error);
+                    currentTripLocation = ""; // Fallback on network error
+                }
+
+                updateTripName();            
+
         });
 
         // load the page state if there is saved data in local storage

@@ -50,6 +50,44 @@ h1 {
     font-size: small;
 }
 
+#tripTitleDisplay {
+    display: block;
+    margin: 10px auto;
+    padding: 10px;
+    
+    /* Typography */
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    text-align: center;
+    line-height: 1.2;
+    
+    color: var(--primary-green);
+   
+    /* Animation for the 'Reactive' feel */
+    transition: all 0.3s ease-in-out;
+}
+
+#tripTitleDisplay:empty {
+    display: none;
+}
+
+/* Make it slightly larger on tablets/desktops */
+@media (min-width: 768px) {
+    #tripTitleDisplay {
+        font-size: 2.2rem;
+    }
+}
+
+.title-update-pulse {
+    animation: pulse-green 0.4s ease-out;
+}
+
+@keyframes pulse-green {
+    0% { color: #e8f5e9; } /* Subtle green flash */
+    100% { color: var(--primary-green); }
+}
+
 /* Card-style containers for Map and List */
 .card {
     background: white;
