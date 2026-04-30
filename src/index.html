@@ -130,6 +130,7 @@
             const coords = marker.getLatLng(); // {lat, lng}
             const display = document.getElementById('gearContainer');
             const errBox = document.getElementById('errorMessage');
+            errBox.innerText = ""
 
             display.innerHTML = "Consulting the forecast...";
             const date = document.getElementById('startDate').value;
@@ -228,6 +229,7 @@
                 
                 document.getElementById('precipChance').innerHTML = ""
                 document.getElementById('weather-alerts').innerHTML = ""
+                document.getElementById('errorMessage').innerText = ""
 
                 // 2. Reset the Date Picker
                 const dateInput = document.getElementById('startDate');
