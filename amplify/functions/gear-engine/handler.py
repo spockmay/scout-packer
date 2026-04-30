@@ -3,6 +3,28 @@ import urllib.request
 from datetime import datetime
 
 
+def calculate_trip_days(start_str, end_str):
+    """
+    Computes the number of days between two 'YYYY-MM-DD' strings.
+    Example: '2026-06-12' to '2026-06-14' returns 2. We don't need
+             to pack a set of clothes for day 1, we are wearing them!
+    """
+    try:
+        # Convert strings to datetime objects
+        start_date = datetime.strptime(start_str, "%Y-%m-%d")
+        end_date = datetime.strptime(end_str, "%Y-%m-%d")
+
+        # Calculate the difference (returns a timedelta object)
+        delta = end_date - start_date
+
+        return delta.days
+
+    except ValueError as e:
+        # Log error for system monitoring
+        print(f"Date parsing error: {e}")
+        return 0
+
+
 def handler(event, context):
     # 1. Log the full event so you can see exactly what AWS sees in CloudWatch
     # print(f"FULL EVENT RECEIVED: {json.dumps(event)}")
@@ -18,6 +40,12 @@ def handler(event, context):
     lon = query_params.get("lon", "-81.33")
     start_date_str = query_params.get("date")  # "YYYY-MM-DD"
     end_date_str = query_params.get("enddate")  # "YYYY-MM-DD"
+
+    trip_days = calculate_trip_days(start_date_str, end_date_str)
+    if trip_days == 1:
+        trip_days = f"{trip_days} day"
+    else:
+        trip_days = f"{trip_days} days"
 
     # print(f"USING COORDINATES: {lat}, {lon}")
 
@@ -56,7 +84,7 @@ def handler(event, context):
             "Sleeping Bag",
             "Sleeping pad",
             "Pillow",
-            "Clothes",
+            f"Clothes ({trip_days})",
             "PJs",
             "Toiletries",
             "Books to read",
