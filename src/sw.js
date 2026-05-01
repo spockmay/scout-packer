@@ -1,4 +1,4 @@
-const CACHE_NAME = 'scout-packer-v1';
+const CACHE_NAME = 'scout-packer-v1.0.0';
 const ASSETS = [
   './',
   './index.html',
@@ -6,6 +6,7 @@ const ASSETS = [
   './manifest.json',
   './icon-512.png',
   './icon-192.png',
+  './apple-touch-icon.png',
   './weather-sprites.png',
   './amplify_outputs.json',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
