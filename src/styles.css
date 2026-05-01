@@ -108,7 +108,6 @@ button {
     border: none;
     cursor: pointer;
     transition: transform 0.1s, filter 0.2s;
-    margin-bottom: 10px;
 }
 
 button:active {
@@ -122,12 +121,45 @@ button:active {
     box-shadow: 0 4px 0 #1B3517;
 }
 
-#clearBtn {
-    background-color: transparent;
-    color: var(--warning-red);
-    border: 2px solid var(--warning-red);
-    font-size: 0.9rem;
-    padding: 10px;
+.trip-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.btn-icon {
+    box-sizing: border-box;
+    background-color: #f0f0f0;
+    color: #444;
+    border: 1px solid #ccc;
+    padding: 0 !important;
+    width: 45px;
+    height: 45px;
+    min-width: 45px; 
+    max-width: 45px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-icon i {
+    line-height: 1;
+    display: block; /* Removes the baseline 'gap' beneath the icon */
+}
+
+.btn-icon:hover {
+    background-color: #e0e0e0;
+}
+
+.btn-danger:hover {
+    background-color: #fee;
+    color: #c00;
+    border-color: #c00;
 }
 
 /* Checklist Styling */

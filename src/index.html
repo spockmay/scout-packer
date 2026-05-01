@@ -13,6 +13,7 @@
     <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">    
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -34,11 +35,15 @@
 
         <div id="tripTitleDisplay"></div>
 
-        <button id="generateBtn">Generate Scout Packing List</button>
-        <button id="printPdfBtn" style="display:none;" onclick="window.print()">
-            Download Trip Plan (PDF)
-        </button>
-        <button id="clearBtn" class="btn-secondary">Clear All</button>      
+        <div class="trip-controls">
+            <button id="generateBtn">Generate Packing List</button>
+            <button id="printPdfBtn" class="btn-icon" title="Print to PDF" style="display:none;" onclick="window.print()">
+                <i class="fas fa-print"></i>
+            </button>
+            <button id="clearBtn" class="btn-icon btn-danger" title="Clear All" style="display:none;">
+                <i class="fas fa-trash-can"></i>
+            </button>   
+        </div>   
 
         <div id="weather-alerts"></div>
         <div><p id="precipChance"></p></div>
@@ -304,6 +309,9 @@
         function updateUIState(hasItems) {
             const clearBtn = document.getElementById('clearBtn');
             clearBtn.style.display = hasItems ? 'inline-block' : 'none';
+
+            const printPdfBtn = document.getElementById('printPdfBtn');
+            printPdfBtn.style.display = hasItems ? 'inline-block' : 'none';
         }
 
         document.getElementById('startDate').addEventListener('change', () => {
