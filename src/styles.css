@@ -248,3 +248,50 @@ input[type="date"]:focus {
 .icon-wind-warn   { background-position: calc(var(--weather-icon-size) * -6) 0; }
 .icon-wind-haz    { background-position: calc(var(--weather-icon-size) * -7) 0; }
 .icon-wind-ex     { background-position: calc(var(--weather-icon-size) * -8) 0; }
+
+/* Styles for Printing */
+@media print {
+    /* 1. Hide everything that isn't the packing list */
+    .input-group, button, #map, #footer {
+        display: none !important;
+    }
+
+    /* 2. Style the Page */
+    body {
+        background-color: white !important;
+        color: black !important;
+        font-size: 12pt;
+    }
+
+    /* 3. Ensure the Trip Title is prominent at the top */
+    #tripTitleDisplay {
+        display: block !important;
+        border-left: none;
+        text-align: center;
+        font-size: 24pt;
+        margin-bottom: 30px;
+        box-shadow: none;
+    }
+
+    /* 4. Format the Packing List for paper */
+    #gearContainer {
+        columns: 2; /* Split gear into two columns to save paper */
+        column-gap: 20px;
+    }
+
+    .gear-item {
+        break-inside: avoid; /* Prevent a single item from splitting across pages */
+        border-bottom: 1px solid #eee;
+        padding: 5px 0;
+    }
+
+    .icon-weather {
+        /* Force the browser to render the background image */
+        -webkit-print-color-adjust: exact; 
+        print-color-adjust: exact;
+        
+        /* Ensure the element itself is visible */
+        display: inline-block !important;
+        visibility: visible !important;
+    }
+}

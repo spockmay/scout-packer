@@ -34,7 +34,10 @@
 
         <div id="tripTitleDisplay"></div>
 
-        <button id="generateBtn">Generate Scout Packing List</button>  
+        <button id="generateBtn">Generate Scout Packing List</button>
+        <button id="printPdfBtn" style="display:none;" onclick="window.print()">
+            Download Trip Plan (PDF)
+        </button>
         <button id="clearBtn" class="btn-secondary">Clear All</button>      
 
         <div id="weather-alerts"></div>
@@ -77,12 +80,12 @@
             titleElement.innerText = `${dayCount} day trip to ${location}`;
             
             // Show the button now that the trip is valid
-            generateBtn.style.display = "block";            
+            generateBtn.style.display = "block";      
         } else {
             titleElement.innerText = ""; 
         
             // Hide the button if dates are cleared or invalid
-            generateBtn.style.display = "none";            
+            generateBtn.style.display = "none";    
         }
 
         // 4. Subtle pulse animation
@@ -174,6 +177,8 @@
             const coords = marker.getLatLng(); // {lat, lng}
             const display = document.getElementById('gearContainer');
             const errBox = document.getElementById('errorMessage');
+            const printBtn = document.getElementById('printPdfBtn');
+
             errBox.innerText = ""
 
             display.innerHTML = "Consulting the forecast...";
@@ -205,6 +210,7 @@
 
                 renderGearList(mergedGear);
                 saveGearState(mergedGear);
+                printBtn.style.display = "block"; 
             } catch (err) {
                 errBox.innerText = "Error: " + err.message;
             }
@@ -289,6 +295,7 @@
                 // 4. Update UI State (Hide the clear button)
                 updateUIState(false);
                 generateBtn.style.display = "none";            
+                document.getElementById('printPdfBtn').style.display = "none";
                 
                 console.log("Full system reset complete.");
                 }
