@@ -43,9 +43,9 @@ def handler(event, context):
 
     trip_days = calculate_trip_days(start_date_str, end_date_str)
     if trip_days == 1:
-        trip_days = f"{trip_days} day"
+        trip_days_str = f"{trip_days} day"
     else:
-        trip_days = f"{trip_days} days"
+        trip_days_str = f"{trip_days} days"
 
     # print(f"USING COORDINATES: {lat}, {lon}")
 
@@ -84,7 +84,6 @@ def handler(event, context):
             "Sleeping Bag",
             "Sleeping pad",
             "Pillow",
-            f"Clothes ({trip_days})",
             "PJs",
             "Toiletries",
             "Books to read",
@@ -99,43 +98,49 @@ def handler(event, context):
             "Camp Chair",
         ]
 
+        if trip_days > 0:
+            gear_list.append(f"Clothes ({trip_days_str})")
+
         if max_precip_prob > 40:  # max chance of precip > 40%
             gear_list.append("Rain Jacket/Poncho")
             gear_list.append("Extra socks")
             conditions.append("rain")
 
-        if min_apparent_temp < 7:  # lowest low is below 7C/45F
+        if min_apparent_temp < -10:
+            gear_list.append("Base Layers")
+            gear_list.append("Hat & Mittens")
+            gear_list.append("Wind-proof Outer Layers")
+            conditions.append("dangerous cold")
+        elif min_apparent_temp < 7:  # lowest low is below 7C/45F
             gear_list.append("Base Layers")
             gear_list.append("Hat & Gloves")
             conditions.append("cold")
 
-        if min_apparent_temp < -10:
-            conditions.append("dangerous cold")
-
-        if max_apparent_temp > 32:  # highest high is > 32C/90F
+        if max_apparent_temp > 37:  # highest high is > 37C/100F
+            gear_list.append("Extra water")
+            gear_list.append("Electrolyte packs")
+            conditions.append("dangerous hot")
+        elif max_apparent_temp > 32:  # highest high is > 32C/90F
             gear_list.append("Extra water")
             gear_list.append("Electrolyte packs")
             conditions.append("hot")
 
-        if max_apparent_temp > 37:  # highest high is > 37C/100F
-            conditions.append("dangerous hot")
-
-        if max_uv > 3:
+        if max_uv > 6:
+            gear_list.append("SPF30+ Sunscreen")
+            gear_list.append("Sun hat")
+            conditions.append("high uv")
+        elif max_uv > 3:
             gear_list.append("SPF30+ Sunscreen")
             gear_list.append("Sun hat")
 
-        if max_uv > 6:
-            conditions.append("high uv")
-
-        if max_wind > 41:
-            gear_list.append("Extra tent stakes")
-            conditions.append("wind warning")
-
-        if max_wind > 64:
-            conditions.append("wind hazard")
-
         if max_wind > 93:
             conditions.append("extreme wind hazard")
+        elif max_wind > 64:
+            gear_list.append("Extra tent stakes")
+            conditions.append("wind hazard")
+        elif max_wind > 41:
+            gear_list.append("Extra tent stakes")
+            conditions.append("wind warning")
 
         return {
             "statusCode": 200,
