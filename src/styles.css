@@ -168,7 +168,7 @@ button:active {
     position: -webkit-sticky; /* Safari support */
     position: sticky;
     top: 0;
-    z-index: 1000; /* Ensures it stays above the map and icons */
+    z-index: 9999 !important;    
     
     width: 100%;
     box-sizing: border-box; 
