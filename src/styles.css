@@ -169,7 +169,7 @@ button:active {
     position: sticky;
     top: 0;
     z-index: 9999 !important;    
-    
+
     width: 100%;
     box-sizing: border-box; 
     left: 0;
@@ -204,6 +204,76 @@ button:active {
     font-weight: bold;
     letter-spacing: 1px;
     text-transform: uppercase;
+}
+
+/* Hidden Settings menu */
+/* Container for the configuration area */
+#settingsPanel {
+    display: none; /* Controlled by your JS toggle */
+    border: 1px solid #ccc;
+    padding: 20px;
+    margin: 15px auto;
+    max-width: 650px; /* Gives it more room on desktop */
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+#settingsPanel h3 {
+    margin-top: 0;
+    color: #2e4d32; /* Scout Green */
+}
+
+/* The Flexbox row for input and button */
+.input-group {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+#alwaysAddInput {
+    flex-grow: 1; /* Makes it fill the available width */
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+.btn-add {
+    padding: 10px 20px;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+/* The list of added items */
+#alwaysAddList {
+    margin-top: 15px;
+    list-style: none;
+    padding: 0;
+}
+
+#alwaysAddList li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    margin-bottom: 5px;
+    background-color: #fff;
+    border: 1px solid #eee;
+    border-radius: 4px;
+}
+
+/* Style for the 'X' delete icon */
+#alwaysAddList li i {
+    color: #c00;
+    cursor: pointer;
+    padding: 5px;
+    transition: opacity 0.2s;
+}
+
+#alwaysAddList li i:hover {
+    opacity: 0.7;
 }
 
 /* Gear Checklist Styling */

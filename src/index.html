@@ -22,8 +22,20 @@
             <img src="icon-192.png" alt="ScoutPacker Logo" class="banner-logo">
             <span class="banner-text">ScoutPacker</span>
         </div>
+        <i onclick="toggleSettings()" class="fas fa-cog"></i>
     </header>
     <main role="main">
+        <!-- The Hidden Settings Panel -->
+        <div id="settingsPanel">
+            <h3>Personal "Always-Add" Gear</h3>
+            <p><small>These items will be added to every packing list you generate.</small></p>
+            <div class="input-group">
+                <input type="text" id="alwaysAddInput" placeholder="e.g., Asthma Inhaler, Pocket Knife">
+                <button onclick="saveAlwaysAddItem()" class="btn-main btn-add">Add</button>
+            </div>
+            <ul id="alwaysAddList"></ul>
+        </div>
+
         <div class="input-group">
             <label for="startDate">Departure Date</label>
             <input type="date" id="startDate" name="startDate">
@@ -53,6 +65,7 @@
         <div><p id="gearContainer"></p></div>
         <div><p id="errorMessage"></p></div>
     </main>
+   
     <footer role="contentinfo">
         <div id="footer">
             <hr>
@@ -64,6 +77,48 @@
 
 <script>
     let currentTripLocation = ""; // Global variable to store the name from the map
+
+    function toggleSettings() {
+        const panel = document.getElementById('settingsPanel');
+        if (panel.style.display === "none" || panel.style.display === "") {
+            panel.style.display = "block";
+        } else {
+            panel.style.display = "none";
+        }
+    }
+
+    function saveAlwaysAddItem() {
+        const input = document.getElementById('alwaysAddInput');
+        const newItem = input.value.trim();
+        if (!newItem) return;
+
+        let items = JSON.parse(localStorage.getItem('scoutPackerAlwaysAdd')) || [];
+        items.push(newItem);
+        localStorage.setItem('scoutPackerAlwaysAdd', JSON.stringify(items));
+        
+        input.value = '';
+        displayAlwaysAddItems();
+    }
+
+    function displayAlwaysAddItems() {
+        const listElement = document.getElementById('alwaysAddList');
+        const items = JSON.parse(localStorage.getItem('scoutPackerAlwaysAdd')) || [];
+        
+        // Clean and structural HTML only
+        listElement.innerHTML = items.map((item, index) => `
+            <li>
+                <span>${item}</span>
+                <i class="fas fa-times" onclick="removeAlwaysItem(${index})" title="Remove item"></i>
+            </li>
+        `).join('');
+    }
+
+    function removeAlwaysItem(index) {
+        let items = JSON.parse(localStorage.getItem('scoutPackerAlwaysAdd')) || [];
+        items.splice(index, 1);
+        localStorage.setItem('scoutPackerAlwaysAdd', JSON.stringify(items));
+        displayAlwaysAddItems();
+    }
 
     function updateTripName() {
         const startStr = document.getElementById('startDate').value;
@@ -109,6 +164,14 @@
         navigator.serviceWorker.register('/sw.js')
             .then(() => console.log("Service Worker Registered"));
         }    
+        
+        // pre-load the always-add items
+        displayAlwaysAddItems();
+        document.getElementById('alwaysAddInput').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            saveAlwaysAddItem();
+        }
+        });
 
         function getTodayString() {
             // this is overly verbose but sadly needed to get the date in local TZ
@@ -198,8 +261,17 @@
             try {
                 const response = await fetch(url);
                 const data = await response.json();
-                
+
                 const newGear = data.recommended_gear.map(name => ({ name, checked: false }));
+
+                // Fetch the 'Always-Add' items from storage
+                const personalGear = JSON.parse(localStorage.getItem('scoutPackerAlwaysAdd')) || [];
+                const newPersonalGear = personalGear.map(name => ({ name, checked: false }));
+
+                // Merge them (making sure personal items stand out)
+                if (personalGear.length > 0) {
+                    newGear.push(...newPersonalGear);
+                }                
 
                 // Merge logic: If item exists in storage, keep its status
                 const saved = JSON.parse(localStorage.getItem('scout_gear_list') || '[]');
@@ -416,6 +488,6 @@
             const className = weatherMap[condition.toLowerCase()] || '';
             if (!className) return ''; // Safety check if condition is unknown
             return `<span class="icon-weather ${className}" title="${condition}"></span>`;
-        }        
+        }
     }); // End of Safety Catch
 </script>
