@@ -407,7 +407,7 @@ input[type="date"]:focus {
 /* Styles for Printing */
 @media print {
     /* 1. Hide everything that isn't the packing list */
-    .input-group, button, #map, #footer {
+    .input-group, button, #map, #footer, #settingsGear {
         display: none !important;
     }
 
