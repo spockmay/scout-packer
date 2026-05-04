@@ -1,6 +1,6 @@
 {
   "name": "ScoutPacker",
-  "short_name": "ScoutPack",
+  "short_name": "ScoutPacker",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#F9FBE7",

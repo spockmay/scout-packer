@@ -71,6 +71,7 @@
             <hr>
             <a href="https://buymeacoffee.com/spockmay" target="_blank">Buy Me a Coffee</a>
             <br>©2026 | <a href="privacy.html" target="_blank">Your Data</a> | <a href="https://github.com/spockmay/scout-packer/issues" target="_blank">Bug or Idea?</a>
+            <div id="app-version">Loading version...</div>
         </div>
     </footer>
 </body>
@@ -157,6 +158,38 @@
         titleElement.classList.add('title-update-pulse');
     }
 
+    async function displayCacheVersion() {
+        const versionDisplay = document.getElementById('app-version');
+        if (!versionDisplay) return;
+
+        try {
+            // Get all cache keys (names) from the browser
+            const cacheNames = await caches.keys();
+            
+            if (cacheNames.length > 0) {
+                // Usually, you'll want the most recent one or the one matching your prefix
+                // If your cache name in sw.js is "scoutpacker-v1.0.2", this pulls it:
+                const myCaches = cacheNames.filter(name => name.startsWith('scout-packer'));
+                myCaches.sort().reverse(); // Put the 'highest' version at index 0
+                versionDisplay.textContent = `${myCaches[0] || 'Unknown'}`;
+            } else {
+                versionDisplay.textContent = "Local Dev Build";
+            }
+        } catch (e) {
+            versionDisplay.textContent = "Unknown Build";
+        }
+    }
+
+    async function checkForUpdate() {
+        if ('serviceWorker' in navigator) {
+            const registration = await navigator.serviceWorker.getRegistration();
+            if (registration) {
+                registration.update();
+                // alert("Checking for updates... if found, they will apply on the next refresh.");
+            }
+        }
+    }
+
     // This is the "Safety Catch" to make sure the map renders before we start being crazy
     document.addEventListener('DOMContentLoaded', () => {
         // register a service worker to enable full offline mode
@@ -172,6 +205,9 @@
             saveAlwaysAddItem();
         }
         });
+
+        displayCacheVersion() // display the version information
+        checkForUpdate() // check for version updates & update
 
         function getTodayString() {
             // this is overly verbose but sadly needed to get the date in local TZ
