@@ -1,0 +1,9 @@
+customHeaders:
+  - pattern: /sw.js
+    headers:
+      - key: Cache-Control
+        value: no-cache, no-store, must-revalidate
+  - pattern: /index.html
+    headers:
+      - key: Cache-Control
+        value: no-cache, no-store, must-revalidate
