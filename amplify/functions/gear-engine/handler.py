@@ -154,7 +154,7 @@ def handler(event, context):
                     "precip_prob": f"{max_precip_prob}%",
                     "recommended_gear": gear_list,
                     "conditions": conditions,
-                    "date": start_date_str,
+                    "forecast_url": f"https://forecast.weather.gov/MapClick.php?lat={lat}&lon={lon}",
                 },
                 ensure_ascii=False,
             ),

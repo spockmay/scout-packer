@@ -28,6 +28,56 @@ h1 {
     padding-bottom: 10px;
 }
 
+.flex-container {
+    display: flex;
+    justify-content: space-between; /* This is the magic line */
+    align-items: center;           /* Keeps them vertically centered */
+    width: 100%;
+    padding: 10px 0;
+}
+
+#precipChance {
+    text-align: left;
+}
+
+#forecast {
+    text-align: right;
+}
+
+#weather-alerts {
+    display: flex;
+    justify-content: center; /* Centers icons horizontally */
+    align-items: center;     /* Centers icons vertically */
+    gap: 15px;               /* Adds clean spacing between the spans */
+    padding: 10px;
+    width: 100%;
+}
+
+#weather-alerts span {
+    display: inline-flex;    /* Ensures spans behave well with flex parents */
+}
+
+/* Base link styling for mobile-first affordance */
+a {
+    display: inline-block;
+    color: var(--primary-green);
+    padding: 4px 10px;
+    margin: 2px 0;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+/* Keep the simple text style for footer/legal links */
+footer a {
+    background: none;
+    border: none;
+    padding: 0;
+    text-decoration: underline;
+    font-weight: normal;
+    font-size: 0.85rem;
+    color: var(--stone-gray);
+}
+
 #footer {
     text-align: center;
     font-size: small;

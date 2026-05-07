@@ -61,7 +61,10 @@
         </div>   
 
         <div id="weather-alerts"></div>
-        <div><p id="precipChance"></p></div>
+        <div class="flex-container">
+            <div id="precipChance"></div>
+            <div id="forecast"></div>
+        </div>
         <div><p id="gearContainer" style="text-align: center;">To generate your packing list, select the trip dates and location!</p></div>
         <div><p id="errorMessage"></p></div>
     </main>
@@ -316,7 +319,8 @@
                     return existing ? existing : newItem;
                 });
 
-                document.getElementById('precipChance').innerHTML = "Greatest chance of rain: " + data.precip_prob;
+                document.getElementById('precipChance').innerHTML = `Greatest chance of rain: ${data.precip_prob}`;
+                document.getElementById('forecast').innerHTML = `<a href=${data.forecast_url} target="_blank">Full Forecast</a>`;
                 
                 // display weather alert icons
                 const alertContainer = document.getElementById('weather-alerts');
