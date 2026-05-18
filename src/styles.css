@@ -87,8 +87,6 @@ h1 {
     transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-
-
 /* Button optimized to match the target weight of your interactive list items */
 .quick-add-btn {
     flex: 1;
