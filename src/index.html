@@ -66,6 +66,12 @@
             <div id="forecast"></div>
         </div>
         <div><p id="gearContainer" style="text-align: center;">To generate your packing list, select the trip dates and location!</p></div>
+        <div id="quick-add-container">
+            <div id="quick-append-group">
+                <input type="text" id="custom-item-input" placeholder="Add a one-time item (e.g., Swimsuit)...">
+                <button class="quick-add-btn" onclick="addOneTimeItem()">Add</button>
+            </div>
+        </div>
         <div><p id="errorMessage"></p></div>
     </main>
    
@@ -81,6 +87,48 @@
 
 <script>
     let currentTripLocation = ""; // Global variable to store the name from the map
+    let generatedGearArray = JSON.parse(localStorage.getItem('scout_gear_list') || '[]'); // Stores your smart weather/trip list items
+
+    function addOneTimeItem() {
+        const inputElement = document.getElementById('custom-item-input');
+        const itemText = inputElement.value.trim();
+
+        if (!itemText) return; // Validation: Don't add empty strings
+
+        generatedGearArray.push({ name: itemText, checked: false }); // Add to our state array
+
+        // Save to localStorage so it persists on reload
+        saveGearState(generatedGearArray);
+
+        // Append directly to the UI list
+        updateAndRenderMasterList();
+        updateUIState(true);
+
+        // Clear the input and refocus for efficiency
+        inputElement.value = '';
+        inputElement.focus();
+    }    
+
+    function updateAndRenderMasterList() {
+        renderGearList(generatedGearArray);
+    }
+
+
+    function updateUIState(hasItems) {
+        const clearBtn = document.getElementById('clearBtn');
+        clearBtn.style.display = hasItems ? 'inline-block' : 'none';
+
+        const printPdfBtn = document.getElementById('printPdfBtn');
+        printPdfBtn.style.display = hasItems ? 'inline-block' : 'none';
+
+        const quickAppend = document.getElementById('quick-add-container');
+        quickAppend.style.display = hasItems ? 'inline-block' : 'none';            
+    }
+
+    // Function to save current state to storage
+    function saveGearState(gearList) {
+        localStorage.setItem('scout_gear_list', JSON.stringify(gearList));
+    }
 
     function toggleSettings() {
         const panel = document.getElementById('settingsPanel');
@@ -116,6 +164,39 @@
             </li>
         `).join('');
     }
+
+    // Function to render the list with checkboxes
+    function renderGearList(gearArray) {
+        updateUIState(gearArray.length > 0);        
+
+        const container = document.getElementById('gearContainer');
+        container.innerHTML = ''; // Clear previous
+
+        gearArray.forEach((item, index) => {
+            const div = document.createElement('div');
+            div.className = 'gear-item';
+            
+            // Create the checkbox
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = `item-${index}`;
+            checkbox.checked = item.checked || false;
+
+            // Listen for changes to save state
+            checkbox.addEventListener('change', () => {
+                item.checked = checkbox.checked;
+                saveGearState(gearArray);
+            });
+
+            const label = document.createElement('label');
+            label.htmlFor = `item-${index}`;
+            label.innerText = item.name;
+
+            div.appendChild(checkbox);
+            div.appendChild(label);
+            container.appendChild(div);
+        });
+    }    
 
     function removeAlwaysItem(index) {
         let items = JSON.parse(localStorage.getItem('scoutPackerAlwaysAdd')) || [];
@@ -287,7 +368,6 @@
             const coords = marker.getLatLng(); // {lat, lng}
             const display = document.getElementById('gearContainer');
             const errBox = document.getElementById('errorMessage');
-            const printBtn = document.getElementById('printPdfBtn');
 
             errBox.innerText = ""
 
@@ -318,6 +398,7 @@
                     const existing = saved.find(s => s.name === newItem.name);
                     return existing ? existing : newItem;
                 });
+                generatedGearArray = mergedGear;
 
                 document.getElementById('precipChance').innerHTML = `Greatest chance of rain: ${data.precip_prob}`;
                 document.getElementById('forecast').innerHTML = `<a href=${data.forecast_url} target="_blank">Full Forecast</a>`;
@@ -328,18 +409,13 @@
                     .map(cond => getWeatherIconHTML(cond))
                     .join(' ');
 
-                renderGearList(mergedGear);
+                updateAndRenderMasterList();
                 saveGearState(mergedGear);
-                printBtn.style.display = "block"; 
+                updateUIState(true);
             } catch (err) {
                 errBox.innerText = "Error: " + err.message;
             }
         });
-
-        // Function to save current state to storage
-        function saveGearState(gearItems) {
-            localStorage.setItem('scout_gear_list', JSON.stringify(gearItems));
-        }
 
         // function to save the state of the app to local storage
         function saveContext() {
@@ -352,39 +428,6 @@
                 localStorage.setItem('scout_packer_context', JSON.stringify(context));
         }
 
-        // Function to render the list with checkboxes
-        function renderGearList(gearArray) {
-            updateUIState(gearArray.length > 0);        
-
-            const container = document.getElementById('gearContainer');
-            container.innerHTML = ''; // Clear previous
-
-            gearArray.forEach((item, index) => {
-                const div = document.createElement('div');
-                div.className = 'gear-item';
-                
-                // Create the checkbox
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.id = `item-${index}`;
-                checkbox.checked = item.checked || false;
-
-                // Listen for changes to save state
-                checkbox.addEventListener('change', () => {
-                    item.checked = checkbox.checked;
-                    saveGearState(gearArray);
-                });
-
-                const label = document.createElement('label');
-                label.htmlFor = `item-${index}`;
-                label.innerText = item.name;
-
-                div.appendChild(checkbox);
-                div.appendChild(label);
-                container.appendChild(div);
-            });
-        }    
-
         document.getElementById('clearBtn').addEventListener('click', () => {
             // 1. Confirm the action to prevent accidental wipes
             if (confirm("Are you sure you want to clear your current packing list?")) {
@@ -392,6 +435,7 @@
                 // 2. Wipe the specific key from localStorage
                 localStorage.removeItem('scout_gear_list');
                 localStorage.removeItem('scout_packer_context')
+                localStorage.removeItem('scoutPackerCustomItems')
                 
                 // 3. Update the UI
                 document.getElementById('gearContainer').innerHTML = "";
@@ -415,19 +459,11 @@
                 // 4. Update UI State (Hide the clear button)
                 updateUIState(false);
                 generateBtn.style.display = "none";            
-                document.getElementById('printPdfBtn').style.display = "none";
+              
                 
                 console.log("Full system reset complete.");
                 }
         });
-
-        function updateUIState(hasItems) {
-            const clearBtn = document.getElementById('clearBtn');
-            clearBtn.style.display = hasItems ? 'inline-block' : 'none';
-
-            const printPdfBtn = document.getElementById('printPdfBtn');
-            printPdfBtn.style.display = hasItems ? 'inline-block' : 'none';
-        }
 
         document.getElementById('startDate').addEventListener('change', () => {
             // Ensure endDate isn't before startDate

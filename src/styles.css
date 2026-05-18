@@ -57,6 +57,64 @@ h1 {
     display: inline-flex;    /* Ensures spans behave well with flex parents */
 }
 
+/* The parent container, hidden by default until generation */
+#quick-add-container {
+    display: none; 
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px dashed #ccc;
+    width: 100%;
+}
+
+/* The horizontal alignment row */
+#quick-append-group {
+    display: flex;
+    gap: 8px; /* Balanced spacing between input field and button */
+    width: 100%;
+}
+
+/* Styled text input to mimic a clean list item target */
+#custom-item-input {
+    flex-grow: 2; /* Instructs the input to take up all available remaining width */
+    flex-shrink: 1;
+    padding: 8px 12px;
+    font-size: 1rem;
+    border: 1px solid #dce4dc; /* Subtle edge matching your mobile pill style */
+    border-radius: 4px;
+    background-color: #ffffff;
+    color: #333333;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+/* Active focus state for better data entry UX */
+#custom-item-input:focus {
+    border-color: #2e4d32; /* Scout Green accent line on active focus */
+    box-shadow: 0 0 0 2px rgba(46, 77, 50, 0.15);
+}
+
+/* Button optimized to match the target weight of your interactive list items */
+.quick-add-btn {
+    flex: 1;
+    padding: 8px 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #ffffff;
+    background-color: #2e4d32; /* Primary Scout Green */
+    border: 1px solid #2e4d32;
+    border-radius: 4px;
+    cursor: pointer;
+    white-space: nowrap; /* Prevents "Add" text from snapping to a second line */
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+/* Active touch/click state feedback */
+.quick-add-btn:active {
+    background-color: #1b331f; /* Deepens code for physical 'press' response */
+    border-color: #1b331f;
+    transform: translateY(1px);
+}
+
 /* Base link styling for mobile-first affordance */
 a {
     display: inline-block;
