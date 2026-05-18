@@ -88,6 +88,7 @@
 <script>
     let currentTripLocation = ""; // Global variable to store the name from the map
     let generatedGearArray = JSON.parse(localStorage.getItem('scout_gear_list') || '[]'); // Stores your smart weather/trip list items
+    let delete_confirmed = false;
 
     function addOneTimeItem() {
         const inputElement = document.getElementById('custom-item-input');
@@ -192,8 +193,16 @@
             label.htmlFor = `item-${index}`;
             label.innerText = item.name;
 
+            const button = document.createElement('button');
+            button.className = "remove-item-btn";
+            button.onclick = () => removeItemFromTrip(index);
+            button.innerText = '✕'
+
+
             div.appendChild(checkbox);
             div.appendChild(label);
+            div.appendChild(button);
+
             container.appendChild(div);
         });
     }    
@@ -204,6 +213,26 @@
         localStorage.setItem('scoutPackerAlwaysAdd', JSON.stringify(items));
         displayAlwaysAddItems();
     }
+
+    function removeItemFromTrip(masterIndex) {
+        if (!delete_confirmed) {
+            const userConfirmed = confirm("This will remove the item from the packing list.");
+
+            // 2. If the user clicks "Cancel", abort execution immediately
+            if (!userConfirmed) {
+                return;
+            } else {
+                delete_confirmed = true;
+            }
+        } 
+
+        const customIndex = masterIndex - generatedGearArray.length;
+        generatedGearArray.splice(customIndex, 1);
+        saveGearState(generatedGearArray)
+
+        // draw the updated lists
+        renderGearList(generatedGearArray);
+    }    
 
     function updateTripName() {
         const startStr = document.getElementById('startDate').value;

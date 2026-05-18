@@ -363,10 +363,17 @@ button:active {
 /* Gear Checklist Styling */
 .gear-item {
     display: flex;
+    justify-content: space-between;
     align-items: center;
     padding: 15px;
-    border-bottom: 1px solid #EEE;
+    border-bottom: 1px solid #eee;
     font-size: 1.1rem;
+}
+
+.gear-item label {
+    flex: 1;
+    min-width: 0;
+    text-align: left;
 }
 
 .gear-item:last-child { border-bottom: none; }
@@ -400,6 +407,38 @@ button:active {
     color: #AAA;
     text-decoration: line-through;
     transition: all 0.3s ease;
+}
+
+/* Base style for the delete/remove button */
+.remove-item-btn {
+    flex: 0 0 auto;
+    background: none;
+    border: none;
+    color: color-mix(in srgb, var(--stone-gray) 30%, white);
+
+    cursor: pointer;
+    padding: 4px 8px;
+    font-size: 1.1rem;
+    display: inline-flex;
+    align-items:center;
+    justify-content:center;
+    border-radius: 4px;
+    transition: color 0.2s, background-color 0.2s;
+
+    /* Strict sizing dimensions to override browser defaults */
+    padding: 0;           /* Strip all default padding pushing it wide */
+    margin: 0;            /* Strip all default margins */
+    width: 24px;          /* Fixed tap target width */
+    height: 24px;         /* Fixed tap target height */
+    line-height: 24px;    /* Centers the X vertically inside the height */
+    font-size: 1.1rem;
+}
+
+/* Mobile-friendly active state: turns red when intentionally tapped */
+.remove-item-btn:active, 
+.remove-item-btn:hover {
+    color: var(--warning-red);
+    background-color: #ec8d8d; /* Soft red background highlight */
 }
 
 /* Container for the date input to add a custom icon if desired */
