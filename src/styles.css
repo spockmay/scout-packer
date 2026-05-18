@@ -548,7 +548,7 @@ input[type="date"]:focus {
 /* Styles for Printing */
 @media print {
     /* 1. Hide everything that isn't the packing list */
-    .input-group, button, #map, #footer, #settingsGear {
+    .input-group, button, #map, #footer, #settingsGear, #quick-add-container, #forecast, .trip-controls {
         display: none !important;
     }
 
@@ -565,7 +565,7 @@ input[type="date"]:focus {
         border-left: none;
         text-align: center;
         font-size: 24pt;
-        margin-bottom: 30px;
+        margin-bottom: 0px;
         box-shadow: none;
     }
 
@@ -578,7 +578,7 @@ input[type="date"]:focus {
     .gear-item {
         break-inside: avoid; /* Prevent a single item from splitting across pages */
         border-bottom: 1px solid #eee;
-        padding: 5px 0;
+        padding: 0px;
     }
 
     .icon-weather {
