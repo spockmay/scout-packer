@@ -81,7 +81,7 @@ h1 {
     font-size: 1rem;
     border: 1px solid #dce4dc; 
     border-radius: 4px;
-    background-color: var(--canvas-white);
+    background-color: white;
     color: var(--stone-gray);
     outline: none;
     transition: border-color 0.2s, box-shadow 0.2s;
@@ -259,7 +259,7 @@ button:active {
     left: 0;
     right: 0;
     height: 60px; /* Keep it thin */
-    background-color: var(--primary-green); /* Matching Scout Green */
+    background-color: var(--primary-green);
     color: white;
     
     display: flex;
@@ -305,7 +305,7 @@ button:active {
 
 #settingsPanel h3 {
     margin-top: 0;
-    color: #2e4d32; /* Scout Green */
+    color: var(--primary-green);
 }
 
 /* The Flexbox row for input and button */
