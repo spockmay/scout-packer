@@ -79,7 +79,7 @@
         <div id="footer">
             <hr>
             <a href="https://buymeacoffee.com/spockmay" target="_blank">Buy Me a Coffee</a>
-            <br>©2026 | <a href="privacy.html" target="_blank">Your Data</a> | <a href="https://github.com/spockmay/scout-packer/issues" target="_blank">Bug or Idea?</a>
+            <br>©2026 | <a href="privacy.html" target="_blank">Your Data</a> | <a href="mailto:ryan@scoutpacker.com?subject=feedback" target="_blank">Bug or Idea?</a>
             <div id="app-version">Loading version...</div>
         </div>
     </footer>
@@ -429,7 +429,7 @@
                 });
                 generatedGearArray = mergedGear;
 
-                document.getElementById('precipChance').innerHTML = `Greatest chance of rain: ${data.precip_prob}`;
+                document.getElementById('precipChance').innerHTML = `Greatest chance of precip: ${data.precip_prob}`;
                 document.getElementById('forecast').innerHTML = `<a href=${data.forecast_url} target="_blank">Full Forecast</a>`;
                 
                 // display weather alert icons
