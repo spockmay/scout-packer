@@ -9,8 +9,8 @@ const ASSETS = [
   './apple-touch-icon.png',
   './weather-sprites.png',
   './amplify_outputs.json',
-  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
-  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
+  'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js',
+  'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css'
 ];
 
 // 1. Install - Save the "Survival Kit"
