@@ -29,7 +29,7 @@
 <body>
     <header role="banner" class="site-banner">
         <div class="banner-content">
-            <img src="icon-40.png" alt="ScoutPacker Logo" class="banner-logo">
+            <img src="icon-40.png" width="40" height="40" alt="ScoutPacker Logo" fetchpriority="high">
             <span class="banner-text">ScoutPacker</span>
         </div>
         <i id="settingsGear" onclick="toggleSettings()" class="fas fa-cog"></i>
@@ -356,6 +356,14 @@
             maxZoom: 13,
             minZoom: 4
         }).setView(HOME_COORDS, 10);
+
+        // Strange bug where icons are loaded from the wrong url
+        delete L.Icon.Default.prototype._getIconUrl;
+        L.Icon.Default.mergeOptions({
+            iconRetinaUrl: 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+            iconUrl:       'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/images/marker-icon.png',
+            shadowUrl:     'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/images/marker-shadow.png'
+        });
         
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap',
@@ -607,3 +615,4 @@
         }
     }); // End of Safety Catch
 </script>
+</html>

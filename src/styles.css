@@ -278,11 +278,6 @@ button:active {
     width: 100%;
 }
 
-.banner-logo {
-    height: 40px; /* Scaled to fit the 60px header */
-    width: auto;
-}
-
 .banner-text {
     font-size: 1.4rem;
     font-weight: bold;
