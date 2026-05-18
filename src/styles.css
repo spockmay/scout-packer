@@ -33,7 +33,7 @@ h1 {
     justify-content: space-between; /* This is the magic line */
     align-items: center;           /* Keeps them vertically centered */
     width: 100%;
-    padding: 10px 0;
+    padding: 0px;
 }
 
 #precipChance {
@@ -49,7 +49,7 @@ h1 {
     justify-content: center; /* Centers icons horizontally */
     align-items: center;     /* Centers icons vertically */
     gap: 15px;               /* Adds clean spacing between the spans */
-    padding: 10px;
+    padding: 0px;
     width: 100%;
 }
 
@@ -211,7 +211,7 @@ button:active {
     align-items: center;
     justify-content: center;
     gap: 15px;
-    margin: 20px 0;
+    margin: 0px;
 }
 
 .btn-icon {
