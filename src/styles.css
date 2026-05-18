@@ -79,19 +79,15 @@ h1 {
     flex-shrink: 1;
     padding: 8px 12px;
     font-size: 1rem;
-    border: 1px solid #dce4dc; /* Subtle edge matching your mobile pill style */
+    border: 1px solid #dce4dc; 
     border-radius: 4px;
-    background-color: #ffffff;
-    color: #333333;
+    background-color: var(--canvas-white);
+    color: var(--stone-gray);
     outline: none;
     transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-/* Active focus state for better data entry UX */
-#custom-item-input:focus {
-    border-color: #2e4d32; /* Scout Green accent line on active focus */
-    box-shadow: 0 0 0 2px rgba(46, 77, 50, 0.15);
-}
+
 
 /* Button optimized to match the target weight of your interactive list items */
 .quick-add-btn {
@@ -100,8 +96,8 @@ h1 {
     font-size: 1rem;
     font-weight: 600;
     color: #ffffff;
-    background-color: #2e4d32; /* Primary Scout Green */
-    border: 1px solid #2e4d32;
+    background-color: var(--primary-green);
+    border: 1px solid var(--primary-green);
     border-radius: 4px;
     cursor: pointer;
     white-space: nowrap; /* Prevents "Add" text from snapping to a second line */
