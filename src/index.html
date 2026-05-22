@@ -313,6 +313,39 @@
         }
     }
 
+    // Fetches data with automatic retries and asynchronous waiting.
+    async function fetchPackingListData(url, retries = 3, delay = 1500) {
+        for (let i = 0; i < retries; i++) {
+            try {
+                const response = await fetch(url);
+                
+                // 1. Explicitly check if the server returned a success status (200-299)
+                if (!response.ok) {
+                    throw new Error(`Server returned status code ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                // 2. Validate that the critical data array actually exists in the payload
+                if (!data || data.recommended_gear === undefined) {
+                    throw new Error("Payload received, but recommended_gear is undefined");
+                }
+                
+                // If everything passes, return the successful data and exit the loop
+                return data;
+                
+            } catch (error) {
+                console.warn(`Attempt ${i + 1} failed: ${error.message}`);
+                
+                // If this was our last attempt, throw the error out to your exception display UI
+                if (i === retries - 1) throw error;
+                
+                // Otherwise, wait asynchronously without blocking the UI thread before trying again
+                await new Promise(resolve => setTimeout(resolve, delay));
+            }
+        }
+    }
+
     // This is the "Safety Catch" to make sure the map renders before we start being crazy
     document.addEventListener('DOMContentLoaded', () => {
         // register a service worker to enable full offline mode
@@ -425,8 +458,7 @@
             const url = `${LAMBDA_URL}?lat=${coords.lat}&lon=${coords.lng}&date=${date}&enddate=${endDate}`;
 
             try {
-                const response = await fetch(url);
-                const data = await response.json();
+                const data = await fetchPackingListData(url, 3, 1500);
 
                 const newGear = data.recommended_gear.map(name => ({ name, checked: false }));
 
