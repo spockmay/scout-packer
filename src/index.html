@@ -485,7 +485,7 @@
             const date = document.getElementById('startDate').value;
             const endDate = document.getElementById('endDate').value;
             // We send the data as Query Parameters
-            const url = `${LAMBDA_URL}?lat=${coords.lat}&lon=${coords.lng}&date=${date}&enddate=${endDate}`;
+            const url = `${LAMBDA_URL}?lat=${coords.lat}&lon=${coords.lng}&date=${date}&enddate=${endDate}&camper=${aboutMe.camper}&fire=${aboutMe.fire}&knife=${aboutMe.knife}`;
 
             try {
                 const data = await fetchPackingListData(url, 3, 1500);
