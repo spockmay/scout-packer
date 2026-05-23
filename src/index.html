@@ -37,13 +37,27 @@
     <main role="main">
         <!-- The Hidden Settings Panel -->
         <div id="settingsPanel">
-            <h3>Personal "Always-Add" Gear</h3>
-            <p><small>These items will be added to every packing list you generate.</small></p>
-            <div class="input-group">
-                <input type="text" id="alwaysAddInput" placeholder="e.g., Asthma Inhaler, Pocket Knife">
-                <button onclick="saveAlwaysAddItem()" class="btn-main btn-add">Add</button>
+            <!-- Preferences Menu: Always-Add items -->
+            <div>
+                <h3>Personal "Always-Add" Gear</h3>
+                <p><small>These items will be added to every packing list you generate.</small></p>
+                <div class="input-group">
+                    <input type="text" id="alwaysAddInput" placeholder="e.g., Asthma Inhaler, Pocket Knife">
+                    <button onclick="saveAlwaysAddItem()" class="btn-main btn-add">Add</button>
+                </div>
+                <ul id="alwaysAddList"></ul>
             </div>
-            <ul id="alwaysAddList"></ul>
+            <!-- Preferences Menu: About Me Section -->
+            <hr>
+            <div class="preferences-section">
+                <h3>About Me</h3>
+                <label for="user-role-select">I am packing as a:</label>
+                <select id="user-role-select" class="pref-dropdown">
+                    <option value="cub">Cub Scout</option>
+                    <option value="scout" selected>Scout</option>
+                    <option value="adult">Adult Leader / Parent</option>
+                </select>
+            </div>
         </div>
 
         <div class="input-group">
@@ -98,6 +112,7 @@
 <script>
     let currentTripLocation = ""; // Global variable to store the name from the map
     let generatedGearArray = JSON.parse(localStorage.getItem('scout_gear_list') || '[]'); // Stores your smart weather/trip list items
+    let aboutMe = JSON.parse(localStorage.getItem('scout_about') || '{ "camper": "scout", "fire": "true", "knife": "true" }');
     let delete_confirmed = false;
 
     function addOneTimeItem() {
@@ -119,6 +134,15 @@
         inputElement.value = '';
         inputElement.focus();
     }    
+
+    function saveAboutMe() {
+        const selectedRole = document.getElementById('user-role-select').value;
+        aboutMe.camper = selectedRole;
+        localStorage.setItem('scout_about', JSON.stringify(aboutMe));
+        console.log(`Preference saved: ${selectedRole}`);
+        
+        // Optional: Trigger a re-render of the packing list immediately if it's already generated
+    }
 
     function updateAndRenderMasterList() {
         renderGearList(generatedGearArray);
@@ -174,6 +198,10 @@
                 <i class="fas fa-times" onclick="removeAlwaysItem(${index})" title="Remove item"></i>
             </li>
         `).join('');
+    }
+
+    function displayAboutMe() {
+        document.getElementById('user-role-select').value = aboutMe.camper;
     }
 
     // Function to render the list with checkboxes
@@ -361,6 +389,8 @@
             saveAlwaysAddItem();
         }
         });
+
+        displayAboutMe(); 
 
         displayCacheVersion() // display the version information
         checkForUpdate() // check for version updates & update
@@ -562,6 +592,7 @@
         document.getElementById('endDate').addEventListener('change', saveContext);
         document.getElementById('startDate').addEventListener('change', updateTripName);
         document.getElementById('endDate').addEventListener('change', updateTripName);
+        document.getElementById('user-role-select').addEventListener('change', saveAboutMe);
 
         map.on('click', async function(e) {
             marker.setLatLng(e.latlng);
