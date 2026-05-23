@@ -57,6 +57,7 @@
                     <option value="scout" selected>Scout</option>
                     <option value="adult">Adult Leader / Parent</option>
                 </select>
+                <div id="scouting-certifications-container" style="margin-top: 12px;"></div>
             </div>
         </div>
 
@@ -112,7 +113,7 @@
 <script>
     let currentTripLocation = ""; // Global variable to store the name from the map
     let generatedGearArray = JSON.parse(localStorage.getItem('scout_gear_list') || '[]'); // Stores your smart weather/trip list items
-    let aboutMe = JSON.parse(localStorage.getItem('scout_about') || '{ "camper": "scout", "fire": "true", "knife": "true" }');
+    let aboutMe = JSON.parse(localStorage.getItem('scout_about') || '{ "camper": "scout", "fire": true, "knife": true }');
     let delete_confirmed = false;
 
     function addOneTimeItem() {
@@ -135,9 +136,79 @@
         inputElement.focus();
     }    
 
+    /**
+     * Renders the correct certification checkboxes based on the active camper role
+     * and wires up persistence for their checked states.
+     */
+    function renderCertifications() {
+        const certContainer = document.getElementById('scouting-certifications-container');
+        const currentRole = aboutMe.camper;
+        
+        // Clear out whatever was previously in the container
+        certContainer.innerHTML = '';
+
+        let certificationsHTML = '';
+
+        // Determine which checkboxes to build based on the role logic
+        if (currentRole === 'cub') {
+            certificationsHTML = `
+                <label class="cert-checkbox-label">
+                    <input type="checkbox" id="knife"> Whittling Chip Earned
+                </label>
+            `;
+        } else if (currentRole === 'scout') {
+            certificationsHTML = `
+                <label class="cert-checkbox-label" style="display: block; margin-bottom: 6px;">
+                    <input type="checkbox" id="fire"> Firem'n Chit Earned
+                </label>
+                <label class="cert-checkbox-label" style="display: block;">
+                    <input type="checkbox" id="knife"> Totin' Chip Earned
+                </label>
+            `;
+        } else {
+            // "Adult" requires no specialized tool safety cards
+            return;
+        }
+
+        // Inject the HTML string into our placeholder
+        certContainer.innerHTML = certificationsHTML;
+
+        // Restore and listen to the states of the freshly injected checkboxes
+        setupCertTracking();
+    }
+
+    /**
+     * Handles reading/writing individual checkbox states to localStorage
+     */
+    function setupCertTracking() {
+        const certContainer = document.getElementById('scouting-certifications-container');
+        const checkboxes = certContainer.querySelectorAll('input[type="checkbox"]');
+
+        checkboxes.forEach(cb => {
+            // Load existing saved checkbox value from local storage
+            const isChecked = aboutMe[cb.id] === true;
+            cb.checked = isChecked;
+
+            // Listen for user clicks to save changes immediately
+            cb.addEventListener('change', () => {
+                aboutMe[cb.id] = cb.checked;
+                localStorage.setItem('scout_about', JSON.stringify(aboutMe));
+            });
+        });
+    }    
+
     function saveAboutMe() {
         const selectedRole = document.getElementById('user-role-select').value;
         aboutMe.camper = selectedRole;
+
+        if (selectedRole === 'cub') {
+            aboutMe.fire = false;
+        }
+        else if (selectedRole === 'adult') {
+            aboutMe.fire = true;
+            aboutMe.knife = true;
+        }
+        
         localStorage.setItem('scout_about', JSON.stringify(aboutMe));
         console.log(`Preference saved: ${selectedRole}`);
         
@@ -391,6 +462,7 @@
         });
 
         displayAboutMe(); 
+        renderCertifications();
 
         displayCacheVersion() // display the version information
         checkForUpdate() // check for version updates & update
@@ -592,7 +664,10 @@
         document.getElementById('endDate').addEventListener('change', saveContext);
         document.getElementById('startDate').addEventListener('change', updateTripName);
         document.getElementById('endDate').addEventListener('change', updateTripName);
-        document.getElementById('user-role-select').addEventListener('change', saveAboutMe);
+        document.getElementById('user-role-select').addEventListener('change', () => {
+            saveAboutMe();
+            renderCertifications(); 
+        });
 
         map.on('click', async function(e) {
             marker.setLatLng(e.latlng);
