@@ -28,13 +28,6 @@ h1 {
     padding-bottom: 10px;
 }
 
-h3 {
-  background-color: var(--primary-green);
-  border-radius: 4px;
-  color: var(--canvas-white);
-  margin-bottom: 5px;
-}
-
 .flex-container {
     display: flex;
     justify-content: space-between; /* This is the magic line */
@@ -363,6 +356,13 @@ button:active {
 }
 
 /* Gear Checklist Styling */
+#gearContainer h3 {
+  background-color: var(--primary-green);
+  border-radius: 4px;
+  color: var(--canvas-white);
+  margin-bottom: 5px;
+}
+
 .gear-item {
     display: flex;
     justify-content: space-between;
