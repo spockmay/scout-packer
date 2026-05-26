@@ -95,7 +95,6 @@
         <div id="quick-add-container">
             <div id="quick-append-group">
                 <input type="text" id="custom-item-input" placeholder="Add a one-time item (e.g., Swimsuit)...">
-                <!-- TODO: Add a Category text field here or just put in "Other"? -->
                 <button class="quick-add-btn" onclick="addOneTimeItem()">Add</button>
             </div>
         </div>
@@ -119,13 +118,15 @@
     let delete_confirmed = false;
 
     function addOneTimeItem() {
-        // TODO not working after categories
         const inputElement = document.getElementById('custom-item-input');
         const itemText = inputElement.value.trim();
 
         if (!itemText) return; // Validation: Don't add empty strings
 
-        generatedGearArray.push({ name: itemText, checked: false }); // Add to our state array
+        if (!generatedGearArray["Personal Gear"]) {
+            generatedGearArray["Personal Gear"] = [];
+        }
+        generatedGearArray["Personal Gear"].push({ name: itemText, checked: false });
 
         // Save to localStorage so it persists on reload
         saveGearState(generatedGearArray);
