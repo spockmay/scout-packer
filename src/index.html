@@ -43,6 +43,7 @@
                 <p><small>These items will be added to every packing list you generate.</small></p>
                 <div class="input-group">
                     <input type="text" id="alwaysAddInput" placeholder="e.g., Asthma Inhaler, Pocket Knife">
+                    <!-- TODO: Add a Category text field here -->
                     <button onclick="saveAlwaysAddItem()" class="btn-main btn-add">Add</button>
                 </div>
                 <ul id="alwaysAddList"></ul>
@@ -94,6 +95,7 @@
         <div id="quick-add-container">
             <div id="quick-append-group">
                 <input type="text" id="custom-item-input" placeholder="Add a one-time item (e.g., Swimsuit)...">
+                <!-- TODO: Add a Category text field here or just put in "Other"? -->
                 <button class="quick-add-btn" onclick="addOneTimeItem()">Add</button>
             </div>
         </div>
@@ -117,6 +119,7 @@
     let delete_confirmed = false;
 
     function addOneTimeItem() {
+        // TODO not working after categories
         const inputElement = document.getElementById('custom-item-input');
         const itemText = inputElement.value.trim();
 
