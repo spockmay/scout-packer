@@ -42,7 +42,17 @@
                 <h3>Personal "Always-Add" Gear</h3>
                 <p><small>These items will be added to every packing list you generate.</small></p>
                 <div class="input-group">
-                    <input type="text" id="alwaysAddInput" placeholder="e.g., Asthma Inhaler, Pocket Knife">
+                    <input type="text" id="alwaysAddInput" placeholder="e.g., Asthma Inhaler, Glasses">
+                    <input type="text" id="alwaysAddCategory" list="category-options" placeholder="Equipment Category">
+                    <datalist id="category-options">
+                        <option value="Essentials"></option>
+                        <option value="Shelter & Bedding"></option>
+                        <option value="Clothing"></option>
+                        <option value="Toiletries"></option>
+                        <option value="Tools"></option>
+                        <option value="Cooking"></option>
+                        <option value="Leisure"></option>                        
+                    </datalist>
                     <button onclick="saveAlwaysAddItem()" class="btn-main btn-add">Add</button>
                 </div>
                 <ul id="alwaysAddList"></ul>
@@ -122,7 +132,10 @@
 
         if (!itemText) return; // Validation: Don't add empty strings
 
-        generatedGearArray.push({ name: itemText, checked: false }); // Add to our state array
+        if (!generatedGearArray["Personal Gear"]) {
+            generatedGearArray["Personal Gear"] = [];
+        }
+        generatedGearArray["Personal Gear"].push({ name: itemText, checked: false });
 
         // Save to localStorage so it persists on reload
         saveGearState(generatedGearArray);
@@ -250,11 +263,20 @@
         const newItem = input.value.trim();
         if (!newItem) return;
 
+        const input_cat = document.getElementById('alwaysAddCategory');
+        const category = input_cat.value.trim();
+
         let items = JSON.parse(localStorage.getItem('scoutPackerAlwaysAdd')) || [];
-        items.push(newItem);
+        if (category) {
+            items.push(`${newItem} (${category})`);
+        }
+        else {
+            items.push(newItem);
+        }
         localStorage.setItem('scoutPackerAlwaysAdd', JSON.stringify(items));
         
         input.value = '';
+        input_cat.value = '';
         displayAlwaysAddItems();
     }
 
@@ -271,51 +293,116 @@
         `).join('');
     }
 
+    function extractAndCleanAlwaysAddItems(stringList) {
+        // The regex looks for: literal "(", captures everything inside that isn't a ")", then literal ")"
+        const regex = /\(([^)]+)\)/;
+
+        return stringList.map(originalString => {
+            const match = originalString.match(regex);
+
+            if (match) {
+                // match[1] contains exactly what was captured inside the parentheses
+                const extractedValue = match[1];
+
+                // Remove the "(value)" part and use .trim() to clean up any leftover trailing spaces
+                const cleanedString = originalString.replace(regex, '').trim();
+
+                return {
+                    hasParentheses: true,
+                    cleanedName: cleanedString,
+                    insideValue: extractedValue
+                };
+            } else {
+                // Fallback for strings that do not contain parentheses
+                return {
+                    hasParentheses: false,
+                    cleanedName: originalString,
+                    insideValue: null
+                };
+            }
+        });
+    }
+
     function displayAboutMe() {
         document.getElementById('user-role-select').value = aboutMe.camper;
     }
 
-    // Function to render the list with checkboxes
-    function renderGearList(gearArray) {
-        updateUIState(gearArray.length > 0);        
+    // Function to render the categorized list with section headers
+    function renderGearList(categorizedGear) {
+        // Check if we have any items across all the categories combined
+        const totalItemsCount = Object.values(categorizedGear).reduce((acc, list) => acc + list.length, 0);
+        updateUIState(totalItemsCount > 0);        
 
         const container = document.getElementById('gearContainer');
         container.innerHTML = ''; // Clear previous
 
-        gearArray.forEach((item, index) => {
-            const div = document.createElement('div');
-            div.className = 'gear-item';
+        // Loop through the categories (e.g., "Essentials", "Shelter & Bedding")
+        for (const [categoryName, itemsList] of Object.entries(categorizedGear)) {
             
-            // Create the checkbox
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.id = `item-${index}`;
-            checkbox.checked = item.checked || false;
+            // Skip rendering the category completely if it has no items assigned to it
+            // Should not need this, but cost is low.
+            if (itemsList.length === 0) continue;
 
-            // Listen for changes to save state
-            checkbox.addEventListener('change', () => {
-                item.checked = checkbox.checked;
-                saveGearState(gearArray);
+            // Create a clean section container and a header for the category
+            const sectionDiv = document.createElement('div');
+            sectionDiv.className = 'gear-category-section';
+
+            const header = document.createElement('h3');
+            header.className = 'category-title';
+            header.innerText = categoryName;
+            sectionDiv.appendChild(header);
+
+            // Loop through the items inside this specific category
+            itemsList.forEach((item, index) => {
+                const itemName = typeof item === 'string' ? item : item.name;
+                const isChecked = item.checked || false;
+
+                const div = document.createElement('div');
+                div.className = 'gear-item';
+                
+                // Create a safe, unique composite ID using the category name and local index
+                const uniqueId = `item-${categoryName.replace(/\s+/g, '')}-${index}`;
+
+                // Create the checkbox
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = uniqueId;
+                checkbox.checked = isChecked;
+
+                // Listen for changes to save state
+                checkbox.addEventListener('change', () => {
+                    if (typeof item === 'object') {
+                        item.checked = checkbox.checked;
+                    } else {
+                        // If it was just a string array, convert it to an object format to track state
+                        itemsList[index] = { name: itemName, checked: checkbox.checked };
+                    }
+                    saveGearState(categorizedGear);
+                });
+
+                // Create the label linked to our unique ID
+                const label = document.createElement('label');
+                label.htmlFor = uniqueId;
+                label.innerText = itemName;
+
+                // Create the remove button
+                const button = document.createElement('button');
+                button.className = "remove-item-btn";
+                // Pass both category name and index so removal function knows exactly where to slice
+                button.onclick = () => removeItemFromTrip(categoryName, index);
+                button.innerText = '✕';
+
+                div.appendChild(checkbox);
+                div.appendChild(label);
+                div.appendChild(button);
+
+                sectionDiv.appendChild(div);
             });
 
-            const label = document.createElement('label');
-            label.htmlFor = `item-${index}`;
-            label.innerText = item.name;
-
-            const button = document.createElement('button');
-            button.className = "remove-item-btn";
-            button.onclick = () => removeItemFromTrip(index);
-            button.innerText = '✕'
-
-
-            div.appendChild(checkbox);
-            div.appendChild(label);
-            div.appendChild(button);
-
-            container.appendChild(div);
-        });
-    }    
-
+            // Append the whole category block to the main gear container
+            container.appendChild(sectionDiv);
+        }
+    }
     function removeAlwaysItem(index) {
         let items = JSON.parse(localStorage.getItem('scoutPackerAlwaysAdd')) || [];
         items.splice(index, 1);
@@ -323,7 +410,7 @@
         displayAlwaysAddItems();
     }
 
-    function removeItemFromTrip(masterIndex) {
+    function removeItemFromTrip(categoryName, index) {
         if (!delete_confirmed) {
             const userConfirmed = confirm("This will remove the item from the packing list.");
 
@@ -334,14 +421,12 @@
                 delete_confirmed = true;
             }
         } 
+        
+        generatedGearArray[categoryName].splice(index, 1); 
+        renderGearList(generatedGearArray); // Re-render updated layout
+        saveGearState(generatedGearArray);  // Cache to localStorage
+    }
 
-        const customIndex = masterIndex - generatedGearArray.length;
-        generatedGearArray.splice(customIndex, 1);
-        saveGearState(generatedGearArray)
-
-        // draw the updated lists
-        renderGearList(generatedGearArray);
-    }    
 
     function updateTripName() {
         const startStr = document.getElementById('startDate').value;
@@ -562,23 +647,55 @@
             try {
                 const data = await fetchPackingListData(url, 3, 1500);
 
-                const newGear = data.recommended_gear.map(name => ({ name, checked: false }));
+                // 1. Initialize our new dictionary structure
+                const newGear = {};
 
-                // Fetch the 'Always-Add' items from storage
+                // 2. Loop through the categories from Python and convert string names to state objects
+                for (const [categoryName, itemsList] of Object.entries(data.recommended_gear)) {
+                    newGear[categoryName] = itemsList.map(name => ({ name, checked: false }));
+                }
+
+                // 3. Fetch the 'Always-Add' items from storage and map them into their own category block
                 const personalGear = JSON.parse(localStorage.getItem('scoutPackerAlwaysAdd')) || [];
-                const newPersonalGear = personalGear.map(name => ({ name, checked: false }));
+                //const newPersonalGear = personalGear.map(name => ({ name, checked: false }));
 
-                // Merge them (making sure personal items stand out)
                 if (personalGear.length > 0) {
-                    newGear.push(...newPersonalGear);
+                    parsedGear = extractAndCleanAlwaysAddItems(personalGear);
+
+                    // Loop through every object block in the parsedGear list
+                    for (const item of parsedGear) {
+                        console.log(`Status: ${item.hasParentheses}`);
+                        console.log(`Cleaned Name: ${item.cleanedName}`);
+                        console.log(`Extracted Value: ${item.insideValue}`);
+                        
+                        if (!item.hasParentheses) {
+                            item.insideValue = "Personal Gear";
+                        }
+
+                        if (!newGear[item.insideValue]) {
+                            newGear[item.insideValue] = [];
+                        }
+                        newGear[item.insideValue].push({ name: item.cleanedName, checked: false });
+                    }               
                 }                
 
-                // Merge logic: If item exists in storage, keep its status
-                const saved = JSON.parse(localStorage.getItem('scout_gear_list') || '[]');
-                const mergedGear = newGear.map(newItem => {
-                    const existing = saved.find(s => s.name === newItem.name);
-                    return existing ? existing : newItem;
-                });
+                // 4. Merge logic: Read your saved dictionary from localStorage
+                // Note: If your old saved state was a flat array '[]', fall back to a dictionary '{}' instead
+                const saved = JSON.parse(localStorage.getItem('scout_gear_list') || '{}');
+                const mergedGear = {};
+
+                // Loop through our freshly generated nested dictionary to look for matching check marks
+                for (const [categoryName, itemsList] of Object.entries(newGear)) {
+                    mergedGear[categoryName] = itemsList.map(newItem => {
+                        // Look inside the same category in your saved storage to find a match
+                        const savedCategoryList = saved[categoryName] || [];
+                        const existing = savedCategoryList.find(s => s.name === newItem.name);
+                        
+                        return existing ? existing : newItem;
+                    });
+                }
+
+                // Assign the finalized merged dictionary to your global app variable
                 generatedGearArray = mergedGear;
 
                 document.getElementById('precipChance').innerHTML = `Greatest chance of precip: ${data.precip_prob}`;
