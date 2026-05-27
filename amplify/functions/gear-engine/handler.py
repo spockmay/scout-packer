@@ -78,7 +78,6 @@ def handler(event, context):
             "Map and compass",
             "Insect repellant",
             "Safety whistle",
-            "Toilet paper",
             "Sleeping Bag",
             "Sleeping pad",
             "Pillow",
@@ -96,17 +95,18 @@ def handler(event, context):
 
         if query_params.get("fire", "true").lower() == "true":
             gear_list.append("Fire Starter")
-
         if query_params.get("knife", "true").lower() == "true":
             gear_list.append("Pocketknife")
 
         if query_params.get("camper", "scout") == "cub":
             gear_list.append("Stuffed Animal")
             gear_list.append("Cub Scout Book")
-
-        if query_params.get("camper", "scout") == "scout":
+        elif query_params.get("camper", "scout") == "scout":
             gear_list.append("Stuffed Animal")
             gear_list.append("Scout Book")
+            gear_list.append("Toilet paper")
+        else:
+            gear_list.append("Toilet paper")
 
         if trip_days > 0:
             gear_list.append(f"Clothes ({trip_days_str})")

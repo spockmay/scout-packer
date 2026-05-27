@@ -1,11 +1,10 @@
-const CACHE_NAME = 'scout-packer-v1.1.0';
+const CACHE_NAME = 'scout-packer-v1.1.2';
 const ASSETS = [
   './',
   './index.html',
   './styles.css',
   './manifest.json',
-  './icon-512.png',
-  './icon-192.png',
+  './icon-40.png',
   './apple-touch-icon.png',
   './weather-sprites.png',
   './amplify_outputs.json',
