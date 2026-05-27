@@ -334,7 +334,8 @@ button:active {
     box-sizing: border-box;
 }
 
-.radio-group label {
+.radio-group label,
+label.radio-group {
     display: inline-block;
     font-weight: normal;
     margin-right: 15px;
