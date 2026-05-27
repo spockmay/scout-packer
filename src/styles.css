@@ -311,7 +311,7 @@ button:active {
     box-sizing: border-box;
 }
 
-#alwaysAddInput {
+.input-group input[type="text"] {
     flex-grow: 1; /* Makes it fill the available width */
     padding: 10px;
     border: 1px solid #ccc;
