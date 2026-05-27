@@ -42,8 +42,17 @@
                 <h3>Personal "Always-Add" Gear</h3>
                 <p><small>These items will be added to every packing list you generate.</small></p>
                 <div class="input-group">
-                    <input type="text" id="alwaysAddInput" placeholder="e.g., Asthma Inhaler, Pocket Knife">
-                    <!-- TODO: Add a Category text field here -->
+                    <input type="text" id="alwaysAddInput" placeholder="e.g., Asthma Inhaler, Glasses">
+                    <input type="text" id="alwaysAddCategory" list="category-options" placeholder="Equipment Category">
+                    <datalist id="category-options">
+                        <option value="Essentials"></option>
+                        <option value="Shelter & Bedding"></option>
+                        <option value="Clothing"></option>
+                        <option value="Toiletries"></option>
+                        <option value="Tools"></option>
+                        <option value="Cooking"></option>
+                        <option value="Leisure"></option>                        
+                    </datalist>
                     <button onclick="saveAlwaysAddItem()" class="btn-main btn-add">Add</button>
                 </div>
                 <ul id="alwaysAddList"></ul>
@@ -254,11 +263,20 @@
         const newItem = input.value.trim();
         if (!newItem) return;
 
+        const input_cat = document.getElementById('alwaysAddCategory');
+        const category = input_cat.value.trim();
+
         let items = JSON.parse(localStorage.getItem('scoutPackerAlwaysAdd')) || [];
-        items.push(newItem);
+        if (category) {
+            items.push(`${newItem} (${category})`);
+        }
+        else {
+            items.push(newItem);
+        }
         localStorage.setItem('scoutPackerAlwaysAdd', JSON.stringify(items));
         
         input.value = '';
+        input_cat.value = '';
         displayAlwaysAddItems();
     }
 
@@ -273,6 +291,36 @@
                 <i class="fas fa-times" onclick="removeAlwaysItem(${index})" title="Remove item"></i>
             </li>
         `).join('');
+    }
+
+    function extractAndCleanAlwaysAddItems(stringList) {
+        // The regex looks for: literal "(", captures everything inside that isn't a ")", then literal ")"
+        const regex = /\(([^)]+)\)/;
+
+        return stringList.map(originalString => {
+            const match = originalString.match(regex);
+
+            if (match) {
+                // match[1] contains exactly what was captured inside the parentheses
+                const extractedValue = match[1];
+
+                // Remove the "(value)" part and use .trim() to clean up any leftover trailing spaces
+                const cleanedString = originalString.replace(regex, '').trim();
+
+                return {
+                    hasParentheses: true,
+                    cleanedName: cleanedString,
+                    insideValue: extractedValue
+                };
+            } else {
+                // Fallback for strings that do not contain parentheses
+                return {
+                    hasParentheses: false,
+                    cleanedName: originalString,
+                    insideValue: null
+                };
+            }
+        });
     }
 
     function displayAboutMe() {
@@ -609,15 +657,26 @@
 
                 // 3. Fetch the 'Always-Add' items from storage and map them into their own category block
                 const personalGear = JSON.parse(localStorage.getItem('scoutPackerAlwaysAdd')) || [];
-                const newPersonalGear = personalGear.map(name => ({ name, checked: false }));
+                //const newPersonalGear = personalGear.map(name => ({ name, checked: false }));
 
-                if (newPersonalGear.length > 0) {
-                    // If you already have a "Personal" or "Essentials" category, you can push to it. 
-                    // Otherwise, we create a fresh category specifically for their personal list:
-                    if (!newGear["Personal Gear"]) {
-                        newGear["Personal Gear"] = [];
-                    }
-                    newGear["Personal Gear"].push(...newPersonalGear);
+                if (personalGear.length > 0) {
+                    parsedGear = extractAndCleanAlwaysAddItems(personalGear);
+
+                    // Loop through every object block in the parsedGear list
+                    for (const item of parsedGear) {
+                        console.log(`Status: ${item.hasParentheses}`);
+                        console.log(`Cleaned Name: ${item.cleanedName}`);
+                        console.log(`Extracted Value: ${item.insideValue}`);
+                        
+                        if (!item.hasParentheses) {
+                            item.insideValue = "Personal Gear";
+                        }
+
+                        if (!newGear[item.insideValue]) {
+                            newGear[item.insideValue] = [];
+                        }
+                        newGear[item.insideValue].push({ name: item.cleanedName, checked: false });
+                    }               
                 }                
 
                 // 4. Merge logic: Read your saved dictionary from localStorage
