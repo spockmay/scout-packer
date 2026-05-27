@@ -123,8 +123,13 @@
 <script>
     let currentTripLocation = ""; // Global variable to store the name from the map
     let generatedGearArray = JSON.parse(localStorage.getItem('scout_gear_list') || '[]'); // Stores your smart weather/trip list items
-    let aboutMe = JSON.parse(localStorage.getItem('scout_about') || '{ "camper": "scout", "fire": true, "knife": true }');
+    let aboutMe = JSON.parse(localStorage.getItem('scout_about'));
+    let firstBoot = false;
     let delete_confirmed = false;
+
+    if (aboutMe === null) {
+        firstBoot = true;
+    }
 
     function addOneTimeItem() {
         const inputElement = document.getElementById('custom-item-input');
@@ -427,6 +432,21 @@
         saveGearState(generatedGearArray);  // Cache to localStorage
     }
 
+    function getTodayString() {
+        // this is overly verbose but sadly needed to get the date in local TZ
+        const d = new Date();
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    function addDaysToDate(dateStr, days) {
+        const date = new Date(dateStr);
+        date.setDate(date.getDate() + days);
+        return date.toISOString().split('T')[0];
+    }
+
 
     function updateTripName() {
         const startStr = document.getElementById('startDate').value;
@@ -492,7 +512,9 @@
             const registration = await navigator.serviceWorker.getRegistration();
             if (registration) {
                 registration.update();
-                // alert("Checking for updates... if found, they will apply on the next refresh.");
+                
+                // Force the current page to reload
+                // window.location.reload();
             }
         }
     }
@@ -530,6 +552,37 @@
         }
     }
 
+    // function to save the state of the app to local storage
+    function saveContext() {
+        const context = {
+                lat: marker.getLatLng().lat,
+                lon: marker.getLatLng().lng,
+                date: document.getElementById('startDate').value,
+                enddate: document.getElementById('endDate').value
+            };
+            localStorage.setItem('scout_packer_context', JSON.stringify(context));
+    }
+
+    const weatherMap = {
+        'rain': 'icon-rain',
+        'cold': 'icon-cold',
+        'dangerous cold': 'icon-danger-cold',
+        'hot': 'icon-hot',
+        'dangerous hot': 'icon-danger-hot',
+        'high uv': 'icon-uv',
+        'wind warning': 'icon-wind-warn',
+        'wind hazard': 'icon-wind-haz',
+        'extreme wind hazard': 'icon-wind-ex'
+    };
+
+    // Function to generate the icon HTML
+    function getWeatherIconHTML(condition) {
+        const className = weatherMap[condition.toLowerCase()] || '';
+        if (!className) return ''; // Safety check if condition is unknown
+        return `<span class="icon-weather ${className}" title="${condition}"></span>`;
+    }
+
+
     // This is the "Safety Catch" to make sure the map renders before we start being crazy
     document.addEventListener('DOMContentLoaded', () => {
         // register a service worker to enable full offline mode
@@ -537,7 +590,7 @@
         navigator.serviceWorker.register('/sw.js')
             .then(() => console.log("Service Worker Registered"));
         }    
-        
+    
         // pre-load the always-add items
         displayAlwaysAddItems();
         document.getElementById('alwaysAddInput').addEventListener('keypress', function (e) {
@@ -545,27 +598,6 @@
             saveAlwaysAddItem();
         }
         });
-
-        displayAboutMe(); 
-        renderCertifications();
-
-        displayCacheVersion() // display the version information
-        checkForUpdate() // check for version updates & update
-
-        function getTodayString() {
-            // this is overly verbose but sadly needed to get the date in local TZ
-            const d = new Date();
-            const year = d.getFullYear();
-            const month = String(d.getMonth() + 1).padStart(2, '0');
-            const day = String(d.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        }
-
-        function addDaysToDate(dateStr, days) {
-            const date = new Date(dateStr);
-            date.setDate(date.getDate() + days);
-            return date.toISOString().split('T')[0];
-        }
 
         // 1. Initialize the map (centered on Solon, OH)
         const HOME_COORDS = [41.388, -81.436];
@@ -630,6 +662,16 @@
 
         // Run this when the script loads
         initializeApp();
+        displayCacheVersion(); // display the version information
+        checkForUpdate(); // check for version updates & update
+
+        if (firstBoot) {
+            //alert("Welcome new user!");
+        }
+        else {
+            displayAboutMe(); 
+            renderCertifications();
+        }
 
         document.getElementById('generateBtn').addEventListener('click', async () => {
             const coords = marker.getLatLng(); // {lat, lng}
@@ -714,17 +756,6 @@
                 errBox.innerText = "Error: " + err.message;
             }
         });
-
-        // function to save the state of the app to local storage
-        function saveContext() {
-            const context = {
-                    lat: marker.getLatLng().lat,
-                    lon: marker.getLatLng().lng,
-                    date: document.getElementById('startDate').value,
-                    enddate: document.getElementById('endDate').value
-                };
-                localStorage.setItem('scout_packer_context', JSON.stringify(context));
-        }
 
         document.getElementById('clearBtn').addEventListener('click', () => {
             // 1. Confirm the action to prevent accidental wipes
@@ -849,25 +880,6 @@
             document.getElementById('endDate').max = addDaysToDate(today, 15);
 
         });
-
-        const weatherMap = {
-            'rain': 'icon-rain',
-            'cold': 'icon-cold',
-            'dangerous cold': 'icon-danger-cold',
-            'hot': 'icon-hot',
-            'dangerous hot': 'icon-danger-hot',
-            'high uv': 'icon-uv',
-            'wind warning': 'icon-wind-warn',
-            'wind hazard': 'icon-wind-haz',
-            'extreme wind hazard': 'icon-wind-ex'
-        };
-
-        // Function to generate the icon HTML
-        function getWeatherIconHTML(condition) {
-            const className = weatherMap[condition.toLowerCase()] || '';
-            if (!className) return ''; // Safety check if condition is unknown
-            return `<span class="icon-weather ${className}" title="${condition}"></span>`;
-        }
     }); // End of Safety Catch
 </script>
 </html>
