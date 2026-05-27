@@ -1,4 +1,4 @@
-const CACHE_NAME = 'scout-packer-v1.1.2';
+const CACHE_NAME = 'scout-packer-v1.2.0';
 const ASSETS = [
   './',
   './index.html',
