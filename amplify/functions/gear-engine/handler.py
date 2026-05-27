@@ -2,6 +2,58 @@ import json
 import urllib.request
 from datetime import datetime
 
+CATEGORIES = {
+    0: "Essentials",
+    1: "Shelter & Bedding",
+    2: "Clothing",
+    3: "Toiletries",
+    4: "Tools",
+    5: "Cooking",
+    6: "Leisure",
+}
+
+
+class Equipment:
+    def __init__(self, name: str, category: int) -> None:
+        self.name = name
+        self.category = category
+
+    def _to_dict(self) -> dict:
+        return {"name": self.name, "category": self.category}
+
+    def __repr__(self) -> str:
+        return json.dumps(self._to_dict())
+
+    def __lt__(self, other):
+        if self.category == other.category:
+            return self.name < other.name
+        return self.category < other.category
+
+
+def generate_categorized_gear_dict(equipment_list):
+    """
+    Builds a dict where the keys are the equipment categories and the
+    values are a list of equipment names. This is used to simplify the
+    front-end rendering
+    """
+    sorted_equipment = sorted(equipment_list)
+
+    # Initialize the dictionary using the string representations of the categories
+    categorized_dict = {cat_name: [] for cat_name in CATEGORIES.values()}
+
+    # Populate the dictionary with the equipment names
+    for item in sorted_equipment:
+        # Look up the string name using the item's integer category ID
+        category_string = CATEGORIES.get(item.category)
+
+        if category_string:
+            categorized_dict[category_string].append(item.name)
+
+    # Remove categories that don't have any items assigned to them
+    categorized_dict = {k: v for k, v in categorized_dict.items() if v}
+
+    return categorized_dict
+
 
 def calculate_trip_days(start_str, end_str):
     """
@@ -69,87 +121,92 @@ def handler(event, context):
         conditions = []
 
         gear_list = [
-            "Class A Uniform",
-            "Personal First Aid Kit",
-            "Extra Clothing",
-            "Filled Water Bottle",
-            "Flashlight or Headlamp",
-            "Sun Protection",
-            "Map and compass",
-            "Insect repellant",
-            "Safety whistle",
-            "Sleeping Bag",
-            "Sleeping pad",
-            "Pillow",
-            "PJs",
-            "Toiletries",
-            "Books to read",
-            "Boots",
-            "Camp Shoes",
-            "Mess kit",
-            "Daypack",
-            "Trashbag",
-            "Towel",
-            "Camp Chair",
+            Equipment("Class A Uniform", 2),
+            Equipment("Personal First Aid Kit", 0),
+            Equipment("Extra Clothing", 0),
+            Equipment("Filled Water Bottle", 0),
+            Equipment("Flashlight or Headlamp", 0),
+            Equipment("Map and compass", 0),
+            Equipment("Insect repellant", 0),
+            Equipment("Safety whistle", 0),
+            Equipment("Sleeping Bag", 1),
+            Equipment("Sleeping Pad", 1),
+            Equipment("Pillow", 1),
+            Equipment("PJs", 2),
+            Equipment("Deodorant", 3),
+            Equipment("Toothbrush", 3),
+            Equipment("Toothpaste", 3),
+            Equipment("Hair Brush", 3),
+            Equipment("Shower Kit", 3),
+            Equipment("Hand Sanitizer", 3),
+            Equipment("Lip Balm", 3),
+            Equipment("Books to read", 6),
+            Equipment("Boots", 2),
+            Equipment("Camp Shoes", 2),
+            Equipment("Mess kit", 5),
+            Equipment("Daypack", 0),
+            Equipment("Trashbag", 0),
+            Equipment("Towel", 3),
+            Equipment("Camp Chair", 6),
         ]
-
         if query_params.get("fire", "true").lower() == "true":
-            gear_list.append("Fire Starter")
+            gear_list.append(Equipment("Fire Starter", 4))
+            gear_list.append(Equipment("Tinder", 4))
         if query_params.get("knife", "true").lower() == "true":
-            gear_list.append("Pocketknife")
+            gear_list.append(Equipment("Pocketknife", 4))
 
         if query_params.get("camper", "scout") == "cub":
-            gear_list.append("Stuffed Animal")
-            gear_list.append("Cub Scout Book")
+            gear_list.append(Equipment("Stuffed Animal", 1))
+            gear_list.append(Equipment("Cub Scout Book", 0))
         elif query_params.get("camper", "scout") == "scout":
-            gear_list.append("Stuffed Animal")
-            gear_list.append("Scout Book")
-            gear_list.append("Toilet paper")
+            gear_list.append(Equipment("Stuffed Animal", 1))
+            gear_list.append(Equipment("Scout Book", 0))
+            gear_list.append(Equipment("Toilet paper", 3))
         else:
-            gear_list.append("Toilet paper")
+            gear_list.append(Equipment("Toilet paper", 3))
 
         if trip_days > 0:
-            gear_list.append(f"Clothes ({trip_days_str})")
+            gear_list.append(Equipment(f"Clothes ({trip_days_str})", 2))
 
         if max_precip_prob > 40:  # max chance of precip > 40%
-            gear_list.append("Rain Jacket/Poncho")
-            gear_list.append("Extra socks")
+            gear_list.append(Equipment("Rain Jacket/Poncho", 2))
+            gear_list.append(Equipment("Extra socks", 2))
             conditions.append("rain")
 
         if min_apparent_temp < -10:
-            gear_list.append("Base Layers")
-            gear_list.append("Hat & Mittens")
-            gear_list.append("Wind-proof Outer Layers")
+            gear_list.append(Equipment("Base Layers", 2))
+            gear_list.append(Equipment("Hat & Mittens", 2))
+            gear_list.append(Equipment("Wind-proof Outer Layers", 2))
             conditions.append("dangerous cold")
         elif min_apparent_temp < 7:  # lowest low is below 7C/45F
-            gear_list.append("Base Layers")
-            gear_list.append("Hat & Gloves")
+            gear_list.append(Equipment("Base Layers", 2))
+            gear_list.append(Equipment("Hat & Gloves", 2))
             conditions.append("cold")
 
         if max_apparent_temp > 37:  # highest high is > 37C/100F
-            gear_list.append("Extra water")
-            gear_list.append("Electrolyte packs")
+            gear_list.append(Equipment("Extra water", 0))
+            gear_list.append(Equipment("Electrolyte packs", 0))
             conditions.append("dangerous hot")
         elif max_apparent_temp > 32:  # highest high is > 32C/90F
-            gear_list.append("Extra water")
-            gear_list.append("Electrolyte packs")
+            gear_list.append(Equipment("Extra water", 0))
+            gear_list.append(Equipment("Electrolyte packs", 0))
             conditions.append("hot")
 
         if max_uv > 6:
-            gear_list.append("SPF30+ Sunscreen")
-            gear_list.append("Sun hat")
+            gear_list.append(Equipment("SPF30+ Sunscreen", 0))
+            gear_list.append(Equipment("Sun hat", 0))
             conditions.append("high uv")
         elif max_uv > 3:
-            gear_list.append("SPF30+ Sunscreen")
-            gear_list.append("Sun hat")
+            gear_list.append(Equipment("SPF30+ Sunscreen", 0))
+            gear_list.append(Equipment("Sun hat", 0))
 
         if max_wind > 93:
             conditions.append("extreme wind hazard")
         elif max_wind > 64:
-            gear_list.append("Extra tent stakes")
+            gear_list.append(Equipment("Extra tent stakes", 0))
             conditions.append("wind hazard")
         elif max_wind > 41:
-            gear_list.append("Extra tent stakes")
+            gear_list.append(Equipment("Extra tent stakes", 0))
             conditions.append("wind warning")
 
         return {
@@ -162,7 +219,9 @@ def handler(event, context):
                 {
                     "location": f"{lat}, {lon}",
                     "precip_prob": f"{max_precip_prob}%",
-                    "recommended_gear": gear_list,
+                    "recommended_gear": generate_categorized_gear_dict(
+                        gear_list
+                    ),
                     "conditions": conditions,
                     "forecast_url": f"https://forecast.weather.gov/MapClick.php?lat={lat}&lon={lon}",
                 },
