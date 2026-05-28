@@ -35,6 +35,38 @@
         <i id="settingsGear" onclick="toggleSettings()" class="fas fa-cog"></i>
     </header>
     <main role="main">
+        <!-- New User Modal -->
+        <div id="onboarding-modal" class="modal-overlay hidden">
+            <div class="modal-content">
+                <h2>Welcome to ScoutPacker!</h2>
+                <p>Let's configure your profile so your gear packing lists match your scouting role perfectly.</p>
+                <hr>
+
+                <form id="onboarding-form">
+                    <div class="form-group">
+                        <label for="onboard-role">I am packing as a:</label>
+                        <select id="onboard-role" required>
+                            <option value="" disabled selected>Choose your role...</option>
+                            <option value="cub">Cub Scout</option>
+                            <option value="scout">Scout</option>
+                            <option value="adult">Adult Leader / Parent</option>
+                        </select>
+                    </div>
+
+                    <div id="onboard-certs-container" class="form-group"></div>
+
+                    <div class="form-group">
+                        <label>Gender (for specific personal hygiene/clothing logic):</label>
+                        <div class="radio-group">
+                            <label><input type="radio" name="onboard-gender" value="male" required> Male</label>
+                            <label><input type="radio" name="onboard-gender" value="female"> Female</label>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-primary">Complete Setup & Begin</button>
+                </form>
+            </div>
+        </div>
         <!-- The Hidden Settings Panel -->
         <div id="settingsPanel">
             <!-- Preferences Menu: Always-Add items -->
@@ -123,8 +155,13 @@
 <script>
     let currentTripLocation = ""; // Global variable to store the name from the map
     let generatedGearArray = JSON.parse(localStorage.getItem('scout_gear_list') || '[]'); // Stores your smart weather/trip list items
-    let aboutMe = JSON.parse(localStorage.getItem('scout_about') || '{ "camper": "scout", "fire": true, "knife": true }');
+    let aboutMe = JSON.parse(localStorage.getItem('scout_about'));
+    let firstBoot = false;
     let delete_confirmed = false;
+
+    if (aboutMe === null) {
+        firstBoot = true;
+    }
 
     function addOneTimeItem() {
         const inputElement = document.getElementById('custom-item-input');
@@ -427,6 +464,21 @@
         saveGearState(generatedGearArray);  // Cache to localStorage
     }
 
+    function getTodayString() {
+        // this is overly verbose but sadly needed to get the date in local TZ
+        const d = new Date();
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    function addDaysToDate(dateStr, days) {
+        const date = new Date(dateStr);
+        date.setDate(date.getDate() + days);
+        return date.toISOString().split('T')[0];
+    }
+
 
     function updateTripName() {
         const startStr = document.getElementById('startDate').value;
@@ -492,7 +544,9 @@
             const registration = await navigator.serviceWorker.getRegistration();
             if (registration) {
                 registration.update();
-                // alert("Checking for updates... if found, they will apply on the next refresh.");
+                
+                // Force the current page to reload
+                // window.location.reload();
             }
         }
     }
@@ -530,14 +584,107 @@
         }
     }
 
+    // function to save the state of the app to local storage
+    function saveContext() {
+        const context = {
+                lat: marker.getLatLng().lat,
+                lon: marker.getLatLng().lng,
+                date: document.getElementById('startDate').value,
+                enddate: document.getElementById('endDate').value
+            };
+            localStorage.setItem('scout_packer_context', JSON.stringify(context));
+    }
+
+    const weatherMap = {
+        'rain': 'icon-rain',
+        'cold': 'icon-cold',
+        'dangerous cold': 'icon-danger-cold',
+        'hot': 'icon-hot',
+        'dangerous hot': 'icon-danger-hot',
+        'high uv': 'icon-uv',
+        'wind warning': 'icon-wind-warn',
+        'wind hazard': 'icon-wind-haz',
+        'extreme wind hazard': 'icon-wind-ex'
+    };
+
+    // Function to generate the icon HTML
+    function getWeatherIconHTML(condition) {
+        const className = weatherMap[condition.toLowerCase()] || '';
+        if (!className) return ''; // Safety check if condition is unknown
+        return `<span class="icon-weather ${className}" title="${condition}"></span>`;
+    }
+
+
     // This is the "Safety Catch" to make sure the map renders before we start being crazy
     document.addEventListener('DOMContentLoaded', () => {
+        const modal = document.getElementById('onboarding-modal');
+        const modal_form = document.getElementById('onboarding-form');
+        const modal_roleSelect = document.getElementById('onboard-role');
+        const modal_certsContainer = document.getElementById('onboard-certs-container');
+
+        // 1. First Boot Evaluation Step
+        if (firstBoot) {
+            modal.classList.remove('hidden');
+        }
+
+        // 2. Dynamic Certification Injection Rule Engine
+        modal_roleSelect.addEventListener('change', () => {
+            modal_certsContainer.innerHTML = ''; // Reset container
+            const role = modal_roleSelect.value;
+            let html = '';
+
+            if (role === 'cub') {
+                html = `
+                    <label>Scouting Certifications:</label>
+                    <label class="radio-group"><input type="checkbox" id="onboard-whittling"> Knife Adventure Complete</label>
+                `;
+            } else if (role === 'scout') {
+                html = `
+                    <label>Scouting Certifications:</label>
+                    <div style="display: flex; flex-direction: column;">
+                        <label class="radio-group"><input type="checkbox" id="onboard-firemn"> Firem'n Chit Earned</label>
+                        <label class="radio-group"><input type="checkbox" id="onboard-totin"> Totin' Chip Earned</label>
+                    </div>
+                `;
+            }
+            modal_certsContainer.innerHTML = html;
+        });
+
+        // 3. Form Submission Capture and Save
+        modal_form.addEventListener('submit', (e) => {
+            e.preventDefault(); // Lock browser page execution flow
+
+            const selectedRole = modal_roleSelect.value;
+            const selectedGender = document.querySelector('input[name="onboard-gender"]:checked').value;
+
+            // Compile certification booleans dynamically based on whatever fields were drawn
+            const whittlingChip = document.getElementById('onboard-whittling') ? document.getElementById('onboard-whittling').checked : false;
+            const firemnChit = document.getElementById('onboard-firemn') ? document.getElementById('onboard-firemn').checked : false;
+            const totinChip = document.getElementById('onboard-totin') ? document.getElementById('onboard-totin').checked : false;
+
+            // Construct consolidated Profile Data Object payload
+            const userProfile = {
+                camper: selectedRole,
+                gender: selectedGender,
+                knife: whittlingChip || totinChip || selectedRole === 'adult',
+                fire: firemnChit || selectedRole === 'adult',
+                timestamp: new Date().toISOString()
+            };
+
+            // Commit profile payload to persistent browser memory
+            localStorage.setItem('scout_about', JSON.stringify(userProfile));
+
+            // Force state reset. Application wakes up next frame, passes first boot, 
+            // skips modal display, and immediately fetches the customized pack requirements!
+            window.location.reload();
+        });  
+
         // register a service worker to enable full offline mode
         if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/sw.js')
             .then(() => console.log("Service Worker Registered"));
         }    
-        
+    
         // pre-load the always-add items
         displayAlwaysAddItems();
         document.getElementById('alwaysAddInput').addEventListener('keypress', function (e) {
@@ -545,27 +692,6 @@
             saveAlwaysAddItem();
         }
         });
-
-        displayAboutMe(); 
-        renderCertifications();
-
-        displayCacheVersion() // display the version information
-        checkForUpdate() // check for version updates & update
-
-        function getTodayString() {
-            // this is overly verbose but sadly needed to get the date in local TZ
-            const d = new Date();
-            const year = d.getFullYear();
-            const month = String(d.getMonth() + 1).padStart(2, '0');
-            const day = String(d.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        }
-
-        function addDaysToDate(dateStr, days) {
-            const date = new Date(dateStr);
-            date.setDate(date.getDate() + days);
-            return date.toISOString().split('T')[0];
-        }
 
         // 1. Initialize the map (centered on Solon, OH)
         const HOME_COORDS = [41.388, -81.436];
@@ -630,6 +756,12 @@
 
         // Run this when the script loads
         initializeApp();
+        displayCacheVersion(); // display the version information
+        checkForUpdate(); // check for version updates & update
+
+        displayAboutMe(); 
+        renderCertifications();
+
 
         document.getElementById('generateBtn').addEventListener('click', async () => {
             const coords = marker.getLatLng(); // {lat, lng}
@@ -714,17 +846,6 @@
                 errBox.innerText = "Error: " + err.message;
             }
         });
-
-        // function to save the state of the app to local storage
-        function saveContext() {
-            const context = {
-                    lat: marker.getLatLng().lat,
-                    lon: marker.getLatLng().lng,
-                    date: document.getElementById('startDate').value,
-                    enddate: document.getElementById('endDate').value
-                };
-                localStorage.setItem('scout_packer_context', JSON.stringify(context));
-        }
 
         document.getElementById('clearBtn').addEventListener('click', () => {
             // 1. Confirm the action to prevent accidental wipes
@@ -849,25 +970,6 @@
             document.getElementById('endDate').max = addDaysToDate(today, 15);
 
         });
-
-        const weatherMap = {
-            'rain': 'icon-rain',
-            'cold': 'icon-cold',
-            'dangerous cold': 'icon-danger-cold',
-            'hot': 'icon-hot',
-            'dangerous hot': 'icon-danger-hot',
-            'high uv': 'icon-uv',
-            'wind warning': 'icon-wind-warn',
-            'wind hazard': 'icon-wind-haz',
-            'extreme wind hazard': 'icon-wind-ex'
-        };
-
-        // Function to generate the icon HTML
-        function getWeatherIconHTML(condition) {
-            const className = weatherMap[condition.toLowerCase()] || '';
-            if (!className) return ''; // Safety check if condition is unknown
-            return `<span class="icon-weather ${className}" title="${condition}"></span>`;
-        }
     }); // End of Safety Catch
 </script>
 </html>
