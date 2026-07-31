@@ -646,8 +646,8 @@ input[type="date"]:focus {
 
     /* 4. Format the Packing List for paper */
     #gearContainer {
-        columns: 2; /* Split gear into two columns to save paper */
-        column-gap: 20px;
+        columns: 3; /* Split gear into two columns to save paper */
+        column-gap: 10px;
     }
 
     .gear-item {
